@@ -4,14 +4,14 @@ const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_brief
 export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  if(!baseUrl||!serviceKey||!/^https:\/\//.test(baseUrl))throw new Error('Server-side Supabase configuration required');
  const root=new URL('/rest/v1/',baseUrl);
- async function request(table,{method='GET',filter={},body,order,limit,upsert=false}={}){
+ async function request(table,{method='GET',filter={},body,order,limit,select='*',upsert=false}={}){
   if(!TABLES.has(table))throw new Error('Unknown table');
   const url=new URL(table,root);
   for(const [key,value] of Object.entries(filter))url.searchParams.set(key,value);
   if(order)url.searchParams.set('order',order);
-  if(limit)url.searchParams.set('limit',String(limit));
+  if(limit!==undefined)url.searchParams.set('limit',String(limit));
   if(upsert)url.searchParams.set('on_conflict','tenant_id,site_id,keyword,source');
-  if(method==='GET')url.searchParams.set('select','*');
+  if(method==='GET')url.searchParams.set('select',select);
   const headers={apikey:serviceKey,Authorization:'Bearer '+serviceKey,Accept:'application/json'};
   if(body!==undefined)headers['Content-Type']='application/json';
   if(method!=='GET')headers.Prefer=(upsert?'resolution=merge-duplicates,':'')+'return=representation';
@@ -27,6 +27,16 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  }
  const eq=x=>'eq.'+x,filter=(tenantId,siteId)=>({tenant_id:eq(tenantId),site_id:eq(siteId)});
  return {
+  async schemaReady(){
+   // Limit zero validates the required schema columns without returning tenant data.
+   await Promise.all([
+    request('seo_sites',{select:'id,tenant_id,domain,verification_token,verification_issued_at,verified_at',limit:0}),
+    request('seo_opportunities',{select:'id,tenant_id,site_id,keyword',limit:0}),
+    request('seo_prospects',{select:'id,tenant_id,site_id,status',limit:0}),
+    request('seo_briefs',{select:'id,tenant_id,site_id,status',limit:0}),
+   ]);
+   return true;
+  },
   async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200});},
   async createSite(tenantId,data){return request('seo_sites',{method:'POST',body:{...data,tenant_id:tenantId}});},
   async updateSiteVerification(tenantId,id,updates,expectedToken){

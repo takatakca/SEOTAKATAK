@@ -33,3 +33,26 @@ test('PostgREST errors do not expose service credentials',async()=>{
   fetchImpl:async()=>new Response('secret',{status:403})});
  await assert.rejects(()=>store.listSites(A),error=>error instanceof DatabaseError&&error.status===403&&!error.message.includes('PRIVATE'));
 });
+
+test('readiness validates every table and DNS verification column without reading client data',async()=>{
+ const seen=[];
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async url=>{
+   const parsed=new URL(url);
+   seen.push(parsed);
+   return new Response('[]',{status:200,headers:{'content-type':'application/json'}});
+  }
+ });
+ assert.equal(await store.schemaReady(),true);
+ assert.equal(seen.length,4);
+ for(const url of seen)assert.equal(url.searchParams.get('limit'),'0');
+ const sites=seen.find(url=>url.pathname.endsWith('/seo_sites'));
+ assert.ok(sites);
+ assert.match(sites.searchParams.get('select'),/verification_token,verification_issued_at,verified_at/);
+});
+test('readiness fails when database does not have DNS verification migration columns',async()=>{
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async url=>new Response('unknown column',{status:new URL(url).pathname.endsWith('seo_sites')?400:200})
+ });
+ await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===400);
+});

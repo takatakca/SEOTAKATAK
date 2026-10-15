@@ -65,7 +65,7 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
  if(method==='GET'&&path==='/ready'){
   if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
-  try { await store.listSites('00000000-0000-4000-8000-000000000000');return ok({status:'ready',database:'reachable'}); }
+  try { await store.schemaReady();return ok({status:'ready',database:'reachable',schema:'verified'}); }
   catch {return fail(503,'database_unavailable');}
  }
  const identity=verifyBearer(authorization,signingKey);

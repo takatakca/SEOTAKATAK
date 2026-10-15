@@ -6,6 +6,7 @@ const key='a'.repeat(64);
 const A='7d87a2c9-fb84-474a-8ccc-43d6fe47605c',B='8d87a2c9-fb84-474a-8ccc-43d6fe47605d',siteId='7d87a2c9-fb84-474a-8ccc-43d6fe47605e';
 const site={id:siteId,tenant_id:A,domain:'takatak.ca'},records=[];
 const store={
+ async schemaReady(){return true;},
  async listSites(t){return t===A?[site]:[];},
  async ownedSite(t,id){return t===A&&id===siteId?site:null;},
  async createSite(t,data){const row={...data,tenant_id:t};records.push(row);return [{...row,id:siteId}];},
@@ -71,7 +72,7 @@ test('prospects start unearned; purchased status prohibited',async()=>{
 test('readiness checks actual database connectivity',async()=>{
  const ready=await dispatch({method:'GET',path:'/ready'}, {store,signingKey:key});
  assert.equal(ready.code,200);
- const offline=await dispatch({method:'GET',path:'/ready'}, {store:{listSites:async()=>{throw new Error('offline')}},signingKey:key});
+ const offline=await dispatch({method:'GET',path:'/ready'}, {store:{schemaReady:async()=>{throw new Error('missing verification columns')}},signingKey:key});
  assert.equal(offline.code,503);
 });
 
