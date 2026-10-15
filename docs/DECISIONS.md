@@ -12,3 +12,7 @@
 | Google Search Console first, real providers next | Use V1's already verified GSC properties, avoid redundant OAuth identity systems. |
 | Migration/release gates remain | Owner approves database provisioning/migration; V1 coordinator alone merges/deploys V1. A CI-passing branch isn't live production. |
 | No autonomous agent reactivation declared | GitHub CI can run unattended but cannot itself resume open-ended coding; any true agent scheduler needs explicit outside orchestration. |
+
+## Domain ownership verification (2026-10-15)
+
+A registered site is **unverified** by default. Only an authorized TAKATAK V1 integration manager can ask SEOTAKATAK to create a cryptographically random 64-hex-character DNS TXT challenge and check the externally published TXT record. The exact record name is `_seotakatak.<site-domain>` and the value begins `seotakatak-verify=`. Challenge expires after 7 days; regenerating invalidates the previous proof. The verification write requires both the signed workspace and the original challenge token in the database filter to prevent a concurrent rotation from being falsely approved. Challenge secrets never appear in general site listings or read-only API results. Verified ownership is necessary infrastructure for future publishing and must not be conflated with granting any publishing capability today. Database migration needs owner approval.

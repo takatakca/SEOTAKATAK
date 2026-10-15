@@ -3,7 +3,7 @@
 Source of truth: `takatakca/SEOTAKATAK` main. Read `deploy/COOLIFY.md` for the GitHub Action details.
 
 ## Prerequisites (currently not all configured)
-1. Obtain owner approval to use an **existing or approved non-billable Supabase PostgreSQL** project; take a backup and review `sql/0001_seo_core.sql`. Do not apply to TAKATAK V1's live database without its release coordinator.
+1. Obtain owner approval to use an **existing or approved non-billable Supabase PostgreSQL** project; take a backup and review `sql/0001_seo_core.sql` and the newer `sql/0002_domain_verification.sql` migration, in that order. Do not apply to TAKATAK V1's live database without its release coordinator.
 2. In Coolify (Contabo instance only after verifying its active hostname), configure one SEOTAKATAK Dockerfile application pointing to this GitHub repository `main`, Node 22 port 3000, HTTPS/valid TLS. Runtime env: `NODE_ENV=production`, `SEO_SUPABASE_URL`, `SEO_SUPABASE_SERVICE_ROLE_KEY`, `SEOTAKATAK_SIGNING_KEY` (random >=32 bytes; same shared secret in V1). Never put secrets in Git.
 3. In SEOTAKATAK GitHub **Settings → Environments → production**, variable `SEOTAKATAK_COOLIFY_API_URL` (trusted Coolify HTTPS origin), variable `SEOTAKATAK_COOLIFY_APP_UUID`, variable `SEOTAKATAK_HEALTH_URL` (service HTTPS origin), secret `SEOTAKATAK_COOLIFY_API_TOKEN` (least-privilege API token).
 4. In TAKATAK V1 runtime configure `SEOTAKATAK_API_URL` (service HTTPS origin) and matching `SEOTAKATAK_SIGNING_KEY`. GSC imports additionally require verified domain-linked Google service account access.
@@ -26,3 +26,7 @@ Use Coolify's previously verified image/commit if available; never roll back DB 
 ### Immutable-release SHA guard
 
 The workflow supplies `EXPECTED_COMMIT_SHA` from its successful CI run to `scripts/deploy-coolify.sh`. The script checks Coolify `GET /api/v1/deployments/{deployment_uuid}` and requires the returned `commit` field to equal that exact SHA before considering the release successful. Missing or different metadata fails closed. API contract: https://coolify.io/docs/api/endpoints/deployments/get-deployment-by-uuid.
+
+### DNS verification acceptance test (after database approval)
+
+For a domain you control, register it under the authorized TAKATAK client workspace and start a DNS challenge in `/dashboard/seo/portfolio/{siteId}`. Publish the exact TXT host/value in your DNS provider. Before propagation, `/verification/check` must fail without recording proof. After TXT propagation, the API should return `verified:true` with `verifiedAt`, redact `verification_token` in `GET /v1/sites` and deny all challenge mutations to users without `seo:manage`. A second TAKATAK workspace must receive 404 for the first workspace site. The initial database (0001) alone is insufficient for these new endpoints; missing columns are an operator-visible 503, never silently treated as verification.

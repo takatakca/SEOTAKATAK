@@ -28,3 +28,9 @@ At backend SHA `c1be583a1c18750cc4fd2c9dae49a54a87992ede`, GitHub CI run `387933
 ### Verified build pipeline milestone
 
 Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks Coolify's reported commit against the exact GitHub-verified SHA and requires database readiness. The subsequent deployment still failed on absent infrastructure configuration, so **production is not live**.
+
+### 2026-10-15 domain ownership milestone
+- Implemented 256-bit randomized DNS TXT challenge at `_seotakatak.<domain>`, seven-day expiry, strict tenant-managed endpoints, live DNS comparison, and conditional database update that refuses a rotated challenge.
+- Read-only SEO users cannot fetch or start the TXT challenge; site-list and site-detail JSON explicitly redact stored challenge token and issuance time.
+- New **pending** SQL migration `sql/0002_domain_verification.sql` adds challenge/verified columns. Neither this nor `0001` was executed against production.
+- Backend CI passed on code SHA `4bcdc57c769ba92228e8c98090180a85c904d2bf`, run `38798985084`; corresponding production deployment `38799021739` failed due previously documented Coolify setup blockage. Client dashboard integration awaits V1 PR #182 coordinator review.

@@ -43,3 +43,12 @@
 - The deployment runner now compares Coolify's returned `commit` field with the exact SHA validated by CI and also requires successful database-ready health. Neither check can substitute for supplying a real application and approved database.
 - V1 PR #182 branch code reached **8cd20b5ef03797a328bbe7083f012ba69d605d49** with a verified-query table; latest full V1 CI is still running and V1 coordinator controls merge/promotion.
 - **Next exact step:** check the latest V1 PR CI; if green, hand to designated coordinator; separately configure the Coolify and database values from issue #1, then verify the deployed SHA and two-client tenancy.
+
+## Latest 2026-10-15 checkpoint: domain ownership
+
+- **Last completed code**: `4bcdc57c769ba92228e8c98090180a85c904d2bf` — backend DNS verification, ownership-token redaction, SQL migration 0002 and tests. GitHub CI **passed** at run `38798985084`. Subsequent deploy run `38799021739` failed because Coolify production is not configured.
+- **Files modified**: `src/verification.mjs`, `src/app.mjs`, `src/store.mjs`, `tests/verification.test.mjs`, `sql/0002_domain_verification.sql`, `package.json`, readme and docs. TAKATAK V1 PR #182 branch adds signed DNS bridge, server actions and TXT instructions UI.
+- **Commands/verification**: GitHub Actions ran `npm run check`, `bash -n scripts/deploy-coolify.sh` and `docker build -t seotakatak:ci .` on code SHA `4bcdc57c`. DNS tests include manager permissions, cross-tenant refusal, TXT matching, expiry, concurrent rotation and no token leak to viewers.
+- **Ongoing task**: verify full V1 PR CI after DNS UI update; fix any typecheck/build/contract issues on the PR branch, then hand green PR to the designated V1 coordinator.
+- **Production**: NOT LIVE. Owner-approved existing database and migration 0001 + 0002, Coolify app/tokens/HTTPS, V1 runtime settings and coordinator release are still required. All specifics tracked in SEOTAKATAK issue #1; no secret value is documented here.
+- **Exact next action**: retrieve new GitHub branch SHA + CI run, inspect failures if any; once green, test real DNS proof after owner-approved DB migration and Coolify deployment. Continue independent work from TASK_QUEUE without inventing deployments.

@@ -5,6 +5,8 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Baseline Node.js backend, tenant-isolated REST API and schema.
 - [x] Differentiate `seo:import` from `seo:manage`; bind import action to verified TAKATAK V1 Search Console source (PR #182).
 - [x] Add bounded, honest SEO summary and safe CSV export.
+- [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.
+- [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.
 - [x] Confirm backend code CI run 38793391043 passed; fixed initial regression test expectations.
 - [ ] Confirm latest V1 PR #182 full CI after all updates; fix only actual failures.
 - [ ] Coordinator reviews/merges TAKATAK V1 PR #182; coordinator handles V1 production release. Do not bypass coordinator.
