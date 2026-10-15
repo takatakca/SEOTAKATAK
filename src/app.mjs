@@ -6,6 +6,10 @@ const statuses=new Set(['identified','researching','contacted','declined']); // 
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const fail=(code,error)=>({code,result:{ok:false,error}});
 const ok=(body={},code=200)=>({code,result:{ok:true,...body}});
+const publicSite=site=>{
+ const {verification_token,verification_issued_at,...fields}=site;
+ return fields;
+};
 function domain(input){
  if(typeof input!=='string'||input.length>253)return null;
  try{
@@ -75,18 +79,18 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{
   if(parts.length===2&&parts[1]==='sites'){
-   if(method==='GET')return ok({sites:await store.listSites(tenantId)});
+   if(method==='GET')return ok({sites:(await store.listSites(tenantId)).map(publicSite)});
    if(method==='POST'){
     const hostname=domain(json.domain),niche=asText(json.niche,120),market=asText(json.market,80);
     if(!hostname||niche.length<2||market.length<2)return fail(400,'invalid_site');
     const rows=await store.createSite(tenantId,{domain:hostname,niche,market,locale:['fr-CA','en-CA','es'].includes(json.locale)?json.locale:'en-CA'});
-    return ok({site:rows[0]},201);
+    return ok({site:publicSite(rows[0])},201);
    }
   }
   if(parts.length>=3&&parts[1]==='sites'&&ID.test(parts[2])){
    const siteId=parts[2],site=await store.ownedSite(tenantId,siteId);
    if(!site)return fail(404,'site_not_found');
-   if(parts.length===3&&method==='GET')return ok({site});
+   if(parts.length===3&&method==='GET')return ok({site:publicSite(site)});
    // Domain verification is an independent evidence gate; registration alone is not ownership.
    if(parts.length===4&&parts[3]==='verification'&&method==='GET'){
     if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');

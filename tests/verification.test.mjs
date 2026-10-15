@@ -71,3 +71,15 @@ test('expired challenge and concurrent token rotation are rejected',async()=>{
  assert.equal(check.code,409);
  assert.equal(x.site.verified_at,null);
 });
+
+test('ordinary site response hides the DNS challenge secret while management can retrieve it',async()=>{
+ const x=fixture(),path='/v1/sites/'+ID;
+ const issued=await x.run('POST',path+'/verification/start');
+ assert.equal(issued.code,201);
+ const exposed=await x.run('GET',path,x.token(A,['seo:view']));
+ assert.equal(exposed.code,200);
+ assert.equal(exposed.result.site.verification_token,undefined);
+ assert.equal(exposed.result.site.verification_issued_at,undefined);
+ const visible=await x.run('GET',path+'/verification',x.token(A,['seo:manage']));
+ assert.equal(visible.result.challenge.recordValue,issued.result.challenge.recordValue);
+});
