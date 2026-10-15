@@ -14,4 +14,5 @@ jobs:
         with:
           node-version: '22'
       - run: npm run check
+      - run: bash -n scripts/deploy-coolify.sh
       - run: docker build -t seotakatak:ci .
