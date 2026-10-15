@@ -1,0 +1,22 @@
+# SEOTAKATAK — project status
+
+Last audit: **2026-10-15** · GitHub repository: `takatakca/SEOTAKATAK` · branch: `main`.
+
+## Implemented
+- Node 22 HTTP API, Docker image and basic liveness/readiness endpoints.
+- TAKATAK V1-issued 60-second HMAC-signed identity tokens; `seo:view`, `seo:manage`, `seo:import` roles and enforced tenant/site ownership.
+- Tenant-separated site registry, content briefs, backlink prospects (not falsely labeled earned), Search Console ingest endpoint reserved for verified V1 server-side connector.
+- Stored query opportunity scoring; bounded 200-row opportunity/brief/prospect data reads, honestly labeled sampled summary and formula-injection-safe CSV opportunity export.
+- Supabase/PostgREST adapter, PostgreSQL schema proposal with RLS and tenant foreign keys.
+- CI tests + Docker checks and GitHub Actions Coolify deployment job gated on green CI, with DB-ready probe.
+- TAKATAK V1 dashboard integration in **PR #182** (existing SEO pages retained): public /free-tools, authenticated /dashboard/seo/free-tools and /dashboard/seo/portfolio; Google Search Console verified server-side import is under review.
+
+## Not yet done / no false success
+- Live Supabase database not provisioned or tested; `sql/0001_seo_core.sql` not applied to production.
+- Coolify app, API token, app UUID, HTTPS service URL and runtime secrets **not confirmed**. The latest deployment attempts fail at GitHub environment configuration (first observed missing COOLIFY_API_URL).
+- TAKATAK V1 PR #182 is open; only its designated coordinator may merge and deploy.
+- Real backlink verification, real LLM citation/rankings provider, scheduled Google imports, multilingual content publishing, outreach delivery and full operational audit log remain future features. No guaranteed SEO outcome.
+- A true immutable deployed revision has not been validated in a running application.
+
+## Production criterion
+CI success alone is insufficient. Require approved database, deployed HTTPS container, successful /ready DB probe, authenticated V1 client-scoped cross-tenant smoke, verified version and official V1 production promotion.
