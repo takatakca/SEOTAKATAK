@@ -25,6 +25,7 @@ const server=http.createServer(async(req,res)=>{
   }catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_json'}));return;}
  }
  const response=await dispatch({method:req.method,path:url.pathname,authorization:req.headers.authorization,body},{store,signingKey:key});
+ if(response.headers)for(const [name,value] of Object.entries(response.headers))res.setHeader(name,value);
  if(typeof response.raw==='string'){
   res.setHeader('Content-Type',response.contentType);
   res.setHeader('Content-Disposition','attachment; filename="'+response.fileName+'"');

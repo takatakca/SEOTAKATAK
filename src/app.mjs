@@ -1,10 +1,11 @@
 import { verifyBearer,hasScope } from './auth.mjs';
 import { DatabaseError } from './store.mjs';
 import {issueChallenge,challengeDetails,verifySiteTxt,CHALLENGE_MAX_AGE_MS} from './verification.mjs';
+import {apiRateGate} from './rate-limit.mjs';
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['identified','researching','contacted','declined']); // earned requires independent verification
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
-const fail=(code,error)=>({code,result:{ok:false,error}});
+const fail=(code,error,headers)=>({code,result:{ok:false,error},headers});
 const ok=(body={},code=200)=>({code,result:{ok:true,...body}});
 const publicSite=site=>{
  const {verification_token,verification_issued_at,...fields}=site;
@@ -60,7 +61,7 @@ function summarizeRows(opportunities,prospects,briefs){
 }
 export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
-export async function dispatch({method,path,authorization,body},{store,signingKey,dnsLookup}){
+export async function dispatch({method,path,authorization,body},{store,signingKey,dnsLookup,rateGate=apiRateGate}){
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
  if(method==='GET'&&path==='/ready'){
   if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
@@ -76,6 +77,11 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
  if(importRoute&&!hasScope(identity,'seo:import'))return fail(403,'import_permission_required');
  if(method!=='GET'&&!importRoute&&!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
  if(parts[0]!=='v1')return fail(404,'not_found');
+ // Bounded per-process limits. Imported evidence has its own stricter quota.
+ const bucket=importRoute?'import':method==='GET'?'read':'write';
+ const quota=bucket==='import'?8:bucket==='write'?30:120;
+ const allowance=rateGate.take(tenantId+':'+identity.subject+':'+bucket,quota,60_000);
+ if(!allowance.allowed)return fail(429,'rate_limited',{'Retry-After':String(allowance.retryAfter)});
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{
   if(parts.length===2&&parts[1]==='sites'){
