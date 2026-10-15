@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-for required in COOLIFY_API_URL COOLIFY_API_TOKEN COOLIFY_APP_UUID SEOTAKATAK_HEALTH_URL; do
+for required in COOLIFY_API_URL COOLIFY_API_TOKEN COOLIFY_APP_UUID SEOTAKATAK_HEALTH_URL EXPECTED_COMMIT_SHA; do
   if [[ -z "${!required:-}" ]]; then
     echo "::error::Missing production setting: $required"
     exit 1
@@ -12,6 +12,10 @@ if [[ ! "$COOLIFY_API_URL" =~ ^https://[a-zA-Z0-9.-]+(:[0-9]+)?/?$ ]] || [[ ! "$
 fi
 if [[ ! "$COOLIFY_APP_UUID" =~ ^[a-zA-Z0-9_-]{8,100}$ ]]; then
   echo "::error::Invalid Coolify resource UUID."
+  exit 1
+fi
+if [[ ! "$EXPECTED_COMMIT_SHA" =~ ^[a-fA-F0-9]{40}$ ]]; then
+  echo "::error::Expected release commit must be a complete 40-character Git SHA."
   exit 1
 fi
 COOLIFY_API_URL="${COOLIFY_API_URL%/}"
@@ -40,7 +44,15 @@ for attempt in $(seq 1 35); do
   }
   status=$(printf '%s' "$response" | jq -r '.status // "unknown"')
   case "$status" in
-    finished|success) complete=true;break;;
+    finished|success)
+      deployed_commit=$(printf '%s' "$response" | jq -r '.commit // empty')
+      if [[ "$deployed_commit" != "$EXPECTED_COMMIT_SHA" ]]; then
+        echo "::error::Coolify deployed commit does not match the CI-verified SHA (or commit metadata is missing)."
+        exit 1
+      fi
+      complete=true
+      break
+      ;;
     failed|error|cancelled|canceled) echo "::error::Deployment failed: $status";exit 1;;
     *) echo "Awaiting Coolify deployment ($attempt/35): $status";sleep 12;;
   esac

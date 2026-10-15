@@ -15,7 +15,7 @@ Source of truth: `takatakca/SEOTAKATAK` main. Read `deploy/COOLIFY.md` for the G
 - `curl -fsS https://<approved-service-host>/ready` must prove DB reads, not just TCP up.
 - Unauthorized `GET /v1/sites` must respond **401**; with signed scoped V1 token, authorized current workspace should see only its records; second workspace must see **no** first-workspace rows.
 - In TAKATAK V1 `/dashboard/seo/portfolio`, add site for a permitted client, ensure isolation, link a *verified* Search Console domain, perform one real import and validate values.
-- Verify exact running release SHA through your container/image metadata and Coolify deployment record. At present the deployment workflow does not prove exact Git SHA; add an immutable-build release mechanism before full go-live.
+- Verify exact running release SHA through your container/image metadata and Coolify deployment record. The CI-gated deployment script now rejects a Coolify deployment whose reported \`commit\` differs from the exact verified GitHub Actions SHA. Confirm the container is healthy and cross-tenant tests pass as well; API metadata alone does not prove application behavior.
 
 ## Latest known deployment failure
 CI for previous backend revisions passed. Coolify deployment job for SHA `9488b43e` failed on **missing production setting COOLIFY_API_URL**; subsequent jobs also cannot launch without administrator configuration. No actual service deployment or database migration has been verified. Do not invent hostnames, secret values or availability.
