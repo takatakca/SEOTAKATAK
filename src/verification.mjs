@@ -2,7 +2,7 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {Resolver} from 'node:dns/promises';
 export const DOMAIN_VERIFICATION_PREFIX='seotakatak-verify=';
 const TOKEN=/^[a-f0-9]{64}$/;
-const HOST=/^(?=.{4,238}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/;
+const HOST=/^(?=.{4,238}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 export const CHALLENGE_MAX_AGE_MS=7*24*60*60*1000;
 export function issueChallenge(){
  return randomBytes(32).toString('hex');
