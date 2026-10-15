@@ -35,3 +35,11 @@
 3. When an authorized admin configures Coolify/database, re-run the gated deployment; validate /ready and cross-tenant application flow before declaring production success.
 
 **No external agent-restart orchestrator was configured or verified during this session.**
+
+## Latest verified checkpoint (later on 2026-10-15)
+
+- Backend HEAD code revision before this documentation update: **bde41fb788b7e239a1baf699469501d925d5edc3**; CI run **38794560027** passed with Node tests, mocked deployment SHA checks, bash syntax and Docker build.
+- The downstream production job **38794610199** failed due incomplete Coolify release prerequisites; backend has **not** gone live. The exact human action is documented in [issue #1](https://github.com/takatakca/SEOTAKATAK/issues/1).
+- The deployment runner now compares Coolify's returned `commit` field with the exact SHA validated by CI and also requires successful database-ready health. Neither check can substitute for supplying a real application and approved database.
+- V1 PR #182 branch code reached **8cd20b5ef03797a328bbe7083f012ba69d605d49** with a verified-query table; latest full V1 CI is still running and V1 coordinator controls merge/promotion.
+- **Next exact step:** check the latest V1 PR CI; if green, hand to designated coordinator; separately configure the Coolify and database values from issue #1, then verify the deployed SHA and two-client tenancy.

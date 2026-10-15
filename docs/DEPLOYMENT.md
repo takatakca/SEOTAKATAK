@@ -22,3 +22,7 @@ CI for previous backend revisions passed. Coolify deployment job for SHA `9488b4
 
 ## Rollback
 Use Coolify's previously verified image/commit if available; never roll back DB blindly. Protect database with a backup and migration approval. Verify /ready, API permissions and TAKATAK V1 bridge after rollback.
+
+### Immutable-release SHA guard
+
+The workflow supplies `EXPECTED_COMMIT_SHA` from its successful CI run to `scripts/deploy-coolify.sh`. The script checks Coolify `GET /api/v1/deployments/{deployment_uuid}` and requires the returned `commit` field to equal that exact SHA before considering the release successful. Missing or different metadata fails closed. API contract: https://coolify.io/docs/api/endpoints/deployments/get-deployment-by-uuid.

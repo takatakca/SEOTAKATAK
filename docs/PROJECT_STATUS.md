@@ -24,3 +24,7 @@ CI success alone is insufficient. Require approved database, deployed HTTPS cont
 ## Most recent verified checks
 
 At backend SHA `c1be583a1c18750cc4fd2c9dae49a54a87992ede`, GitHub CI run `38793391043` passed. Automatic production job `38793423983` failed; see [release blocker issue #1](https://github.com/takatakca/SEOTAKATAK/issues/1). No hosted service is confirmed.
+
+### Verified build pipeline milestone
+
+Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks Coolify's reported commit against the exact GitHub-verified SHA and requires database readiness. The subsequent deployment still failed on absent infrastructure configuration, so **production is not live**.
