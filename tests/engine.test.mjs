@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {issueToken,verifyBearer} from '../src/auth.mjs';
-import {dispatch,validateDomain,validateSearchConsoleRows} from '../src/app.mjs';
+import {dispatch,validateDomain,validateSearchConsoleRows,safeCsvCell,opportunityCsv} from '../src/app.mjs';
 const key='a'.repeat(64);
 const A='7d87a2c9-fb84-474a-8ccc-43d6fe47605c',B='8d87a2c9-fb84-474a-8ccc-43d6fe47605d',siteId='7d87a2c9-fb84-474a-8ccc-43d6fe47605e';
 const site={id:siteId,tenant_id:A,domain:'takatak.ca'},records=[];
@@ -82,4 +82,27 @@ test('ingestion tokens cannot alter prospects, register sites or read portfolio'
  assert.equal((await req('POST','/v1/sites',{domain:'another.ca',niche:'test',market:'CA'},imported)).code,403);
  assert.equal((await req('POST','/v1/sites/'+siteId+'/briefs',{keyword:'seo',angle:'A long content description'},imported)).code,403);
  }finally{Date.now=saved;}
+});
+
+test('CSV export prevents spreadsheet formula injection and protects tenant access',async()=>{
+ assert.equal(safeCsvCell('=IMPORTXML("https://evil.test")'),"'\"=IMPORTXML(\"\"https://evil.test\"\")\"");
+ assert.match(opportunityCsv([{keyword:'@SUM(1,2)',source:'search_console',clicks:1,impressions:10,position:2,priority:99,updated_at:'today'}]),/"'@SUM\(1,2\)"/);
+ const save=Date.now;try{Date.now=()=>1001000;
+  const endpoint='/v1/sites/'+siteId+'/opportunities.csv';
+  const csv=await req('GET',endpoint,null,jwt(A,['seo:view']));
+  assert.equal(csv.code,200);
+  assert.match(csv.raw,/keyword,source,clicks/);
+  assert.equal((await req('GET',endpoint,null,jwt(B,['seo:view']))).code,404);
+  assert.equal((await req('GET',endpoint,null,jwt(A,['seo:import']))).code,403);
+ }finally{Date.now=save;}
+});
+test('summary explicitly describes sampled evidence and refuses another tenant',async()=>{
+ const save=Date.now;try{Date.now=()=>1001000;
+  const endpoint='/v1/sites/'+siteId+'/summary';
+  const own=await req('GET',endpoint,null,jwt(A,['seo:view']));
+  assert.equal(own.code,200);
+  assert.equal(own.result.summary.countsAreComplete,false);
+  assert.equal(own.result.summary.earnedBacklinksVerified,0);
+  assert.equal((await req('GET',endpoint,null,jwt(B,['seo:view']))).code,404);
+ }finally{Date.now=save;}
 });

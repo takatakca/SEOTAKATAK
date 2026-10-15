@@ -15,15 +15,17 @@
 
 ## API
 
-All routes under /v1 require a signed 60-second server-to-server token issued by TAKATAK V1 with issuer=takatak-v1, audience=seotakatak, sub=the authenticated TAKATAK profile ID, tenant_id=the selected and authorized workspace UUID, permissions=[seo:view,seo:manage]. All writes require seo:manage.
+All routes under /v1 require a signed 60-second server-to-server token issued by TAKATAK V1 with issuer=takatak-v1, audience=seotakatak, sub=the authenticated TAKATAK profile ID, tenant_id=the selected and authorized workspace UUID, permissions=[seo:view,seo:manage,seo:import]. All writes require seo:manage.
 
 - GET /health (public liveness)
 - GET /ready (database and signing configuration readiness)
 - GET /v1/sites
 - POST /v1/sites {domain,niche,market,locale}
 - GET /v1/sites/:siteId
+- GET /v1/sites/:siteId/summary (explicitly sampled, evidence-aware reporting)
+- GET /v1/sites/:siteId/opportunities.csv (tenant-filtered, spreadsheet-safe CSV)
 - GET /v1/sites/:siteId/opportunities
-- POST /v1/sites/:siteId/opportunities/import {source:"search_console",rows:[{keyword,clicks,impressions,position}]}
+- POST /v1/sites/:siteId/opportunities/import {source:"search_console",rows:[{keyword,clicks,impressions,position}]} — requires dedicated seo:import server scope; seo:manage alone is forbidden
 - GET/POST /v1/sites/:siteId/prospects; POST {publication,url,relevance}
 - PATCH /v1/sites/:siteId/prospects/:id/status {status}
 - GET/POST /v1/sites/:siteId/briefs; POST {keyword,angle}

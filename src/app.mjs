@@ -32,6 +32,27 @@ function searchRows(rows){
  }
  return output;
 }
+/** A CSV download is a snapshot, limited to the 200 scoped rows returned by the store. */
+export function safeCsvCell(value){
+ let content=String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim();
+ if(/^[=+@-]/.test(content))content="'"+content;
+ return '"'+content.replace(/"/g,'""')+'"';
+}
+export function opportunityCsv(rows){
+ const fields=['keyword','source','clicks','impressions','position','priority','updated_at'];
+ return fields.join(',')+'\r\n'+rows.map(row=>fields.map(field=>safeCsvCell(row[field])).join(',')).join('\r\n')+'\r\n';
+}
+function summarizeRows(opportunities,prospects,briefs){
+ const sum=opportunities.reduce((n,row)=>n+(Number.isFinite(Number(row.clicks))?Number(row.clicks):0),0);
+ return {
+  source:'stored_search_console_import',provenance:'ingestion_scope_required',period:'not_recorded',
+  scope:'most_recent_200_rows_per_table',countsAreComplete:false,
+  opportunitiesSampled:opportunities.length,prospectsSampled:prospects.length,
+  briefsSampled:briefs.length,clicksInSample:sum,
+  earnedBacklinksVerified:0,verifiedLinkProviderConfigured:false,
+  note:'This report is not a live ranking, full Search Console history, or verified backlink report.'
+ };
+}
 export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
 export async function dispatch({method,path,authorization,body},{store,signingKey}){
@@ -69,6 +90,16 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
     if(parts[3]==='opportunities')return ok({opportunities:await store.listOpportunities(tenantId,siteId)});
     if(parts[3]==='prospects')return ok({prospects:await store.listProspects(tenantId,siteId)});
     if(parts[3]==='briefs')return ok({briefs:await store.listBriefs(tenantId,siteId)});
+    if(parts[3]==='summary'){
+     const [opportunities,prospects,briefs]=await Promise.all([
+      store.listOpportunities(tenantId,siteId),store.listProspects(tenantId,siteId),store.listBriefs(tenantId,siteId)
+     ]);
+     return ok({siteId,summary:summarizeRows(opportunities,prospects,briefs)});
+    }
+    if(parts[3]==='opportunities.csv'){
+     const rows=await store.listOpportunities(tenantId,siteId);
+     return {code:200,raw:opportunityCsv(rows),contentType:'text/csv; charset=utf-8',fileName:'seo-opportunities-'+siteId+'.csv'};
+    }
    }
    if(parts.length===5&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST'){
     if(json.source!=='search_console')return fail(400,'invalid_source');

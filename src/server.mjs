@@ -24,8 +24,14 @@ const server=http.createServer(async(req,res)=>{
    body=JSON.parse(raw);
   }catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_json'}));return;}
  }
- const {code,result}=await dispatch({method:req.method,path:url.pathname,authorization:req.headers.authorization,body},{store,signingKey:key});
- res.writeHead(code).end(JSON.stringify(result));
+ const response=await dispatch({method:req.method,path:url.pathname,authorization:req.headers.authorization,body},{store,signingKey:key});
+ if(typeof response.raw==='string'){
+  res.setHeader('Content-Type',response.contentType);
+  res.setHeader('Content-Disposition','attachment; filename="'+response.fileName+'"');
+  res.writeHead(response.code).end(response.raw);
+ }else{
+  res.writeHead(response.code).end(JSON.stringify(response.result));
+ }
 });
 server.requestTimeout=12000;server.headersTimeout=10000;
 server.listen(port,'0.0.0.0',()=>console.log('SEOTAKATAK listening on '+port));
