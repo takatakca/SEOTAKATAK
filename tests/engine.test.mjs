@@ -85,7 +85,7 @@ test('ingestion tokens cannot alter prospects, register sites or read portfolio'
 });
 
 test('CSV export prevents spreadsheet formula injection and protects tenant access',async()=>{
- assert.equal(safeCsvCell('=IMPORTXML("https://evil.test")'),"'\"=IMPORTXML(\"\"https://evil.test\"\")\"");
+ assert.equal(safeCsvCell('=IMPORTXML("https://evil.test")'),String.raw`"'=IMPORTXML(""https://evil.test"")"`);
  assert.match(opportunityCsv([{keyword:'@SUM(1,2)',source:'search_console',clicks:1,impressions:10,position:2,priority:99,updated_at:'today'}]),/"'@SUM\(1,2\)"/);
  const save=Date.now;try{Date.now=()=>1001000;
   const endpoint='/v1/sites/'+siteId+'/opportunities.csv';
