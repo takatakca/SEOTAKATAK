@@ -6,7 +6,7 @@
 
 - Site registry per TAKATAK V1 client workspace (domain, niche, target market, locale)
 - Real Search Console query import (clicks, impressions and position) with a transparent opportunity priority score
-- Editorial backlink prospect management (identified, researching, contacted, earned, declined)
+- Editorial backlink prospect management (identified, researching, contacted, declined; earned is reserved for future independently verified links)
 - Original content brief queue requiring human editorial review
 - 60-second signed JWT API authentication and read/manage scopes; tenant and site ownership enforced for every operation
 - PostgreSQL schema, PostgREST service integration, Docker image and Node 22 tests
@@ -18,7 +18,7 @@
 All routes under /v1 require a signed 60-second server-to-server token issued by TAKATAK V1 with issuer=takatak-v1, audience=seotakatak, sub=the authenticated TAKATAK profile ID, tenant_id=the selected and authorized workspace UUID, permissions=[seo:view,seo:manage]. All writes require seo:manage.
 
 - GET /health (public liveness)
-- GET /ready (public configuration readiness)
+- GET /ready (database and signing configuration readiness)
 - GET /v1/sites
 - POST /v1/sites {domain,niche,market,locale}
 - GET /v1/sites/:siteId

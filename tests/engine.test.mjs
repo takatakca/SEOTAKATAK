@@ -63,5 +63,13 @@ test('prospects start unearned; purchased status prohibited',async()=>{
  const result=await req('POST',path,{publication:'Relevant outlet',url:'https://example.org/story',relevance:'A relevant editorial opportunity'});
  assert.equal(result.result.prospect.status,'identified');
  assert.equal((await req('PATCH',path+'/'+siteId+'/status',{status:'purchased'})).code,400);
+ assert.equal((await req('PATCH',path+'/'+siteId+'/status',{status:'earned'})).code,400);
  }finally{Date.now=now;}
+});
+
+test('readiness checks actual database connectivity',async()=>{
+ const ready=await dispatch({method:'GET',path:'/ready'}, {store,signingKey:key});
+ assert.equal(ready.code,200);
+ const offline=await dispatch({method:'GET',path:'/ready'}, {store:{listSites:async()=>{throw new Error('offline')}},signingKey:key});
+ assert.equal(offline.code,503);
 });

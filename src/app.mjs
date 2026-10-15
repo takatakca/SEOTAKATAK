@@ -1,7 +1,7 @@
 import { verifyBearer,hasScope } from './auth.mjs';
 import { DatabaseError } from './store.mjs';
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const statuses=new Set(['identified','researching','contacted','earned','declined']);
+const statuses=new Set(['identified','researching','contacted','declined']); // earned requires independent verification
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const fail=(code,error)=>({code,result:{ok:false,error}});
 const ok=(body={},code=200)=>({code,result:{ok:true,...body}});
@@ -36,7 +36,11 @@ export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
 export async function dispatch({method,path,authorization,body},{store,signingKey}){
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
- if(method==='GET'&&path==='/ready')return store&&signingKey?.length>=32?ok({status:'configured'}):fail(503,'not_configured');
+ if(method==='GET'&&path==='/ready'){
+  if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
+  try { await store.listSites('00000000-0000-4000-8000-000000000000');return ok({status:'ready',database:'reachable'}); }
+  catch {return fail(503,'database_unavailable');}
+ }
  const identity=verifyBearer(authorization,signingKey);
  if(!identity)return fail(401,'unauthorized');
  if(!hasScope(identity,'seo:view'))return fail(403,'permission_denied');
