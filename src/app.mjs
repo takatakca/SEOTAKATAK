@@ -1,5 +1,6 @@
 import { verifyBearer,hasScope } from './auth.mjs';
 import { DatabaseError } from './store.mjs';
+import {issueChallenge,challengeDetails,verifySiteTxt,CHALLENGE_MAX_AGE_MS} from './verification.mjs';
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['identified','researching','contacted','declined']); // earned requires independent verification
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
@@ -55,7 +56,7 @@ function summarizeRows(opportunities,prospects,briefs){
 }
 export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
-export async function dispatch({method,path,authorization,body},{store,signingKey}){
+export async function dispatch({method,path,authorization,body},{store,signingKey,dnsLookup}){
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
  if(method==='GET'&&path==='/ready'){
   if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
@@ -86,6 +87,41 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
    const siteId=parts[2],site=await store.ownedSite(tenantId,siteId);
    if(!site)return fail(404,'site_not_found');
    if(parts.length===3&&method==='GET')return ok({site});
+   // Domain verification is an independent evidence gate; registration alone is not ownership.
+   if(parts.length===4&&parts[3]==='verification'&&method==='GET'){
+    if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
+    const verified=typeof site.verified_at==='string'&&!!site.verified_at;
+    const challenge=site.verification_token&&site.verification_issued_at?
+      challengeDetails(site.domain,site.verification_token):null;
+    return ok({verified,verifiedAt:site.verified_at??null,
+      challenge:verified?null:challenge?{...challenge,issuedAt:site.verification_issued_at}:null});
+   }
+   if(parts.length===5&&parts[3]==='verification'&&parts[4]==='start'&&method==='POST'){
+    if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
+    const token=issueChallenge(),details=challengeDetails(site.domain,token);
+    if(!details)return fail(400,'domain_not_eligible_for_dns_verification');
+    const changed=await store.updateSiteVerification(tenantId,siteId,{
+      verification_token:token,verification_issued_at:new Date().toISOString(),verified_at:null
+    });
+    if(!changed.length)return fail(409,'verification_state_changed');
+    return ok({verified:false,challenge:details},201);
+   }
+   if(parts.length===5&&parts[3]==='verification'&&parts[4]==='check'&&method==='POST'){
+    if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
+    if(site.verified_at)return ok({verified:true,verifiedAt:site.verified_at});
+    const token=site.verification_token,issued=Date.parse(site.verification_issued_at||'');
+    if(!token||!Number.isFinite(issued)||issued>Date.now()+60_000||Date.now()-issued>CHALLENGE_MAX_AGE_MS)
+      return fail(409,'verification_challenge_expired_or_missing');
+    const matches=await verifySiteTxt(site.domain,token,dnsLookup);
+    if(!matches)return fail(409,'dns_txt_not_verified');
+    const verifiedAt=new Date().toISOString();
+    const changed=await store.updateSiteVerification(tenantId,siteId,{
+      verified_at:verifiedAt,verification_token:null,verification_issued_at:null
+    },token);
+    if(!changed.length)return fail(409,'verification_state_changed');
+    return ok({verified:true,verifiedAt});
+   }
+
    if(parts.length===4&&method==='GET'){
     if(parts[3]==='opportunities')return ok({opportunities:await store.listOpportunities(tenantId,siteId)});
     if(parts[3]==='prospects')return ok({prospects:await store.listProspects(tenantId,siteId)});

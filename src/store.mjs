@@ -29,6 +29,11 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  return {
   async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200});},
   async createSite(tenantId,data){return request('seo_sites',{method:'POST',body:{...data,tenant_id:tenantId}});},
+  async updateSiteVerification(tenantId,id,updates,expectedToken){
+   return request('seo_sites',{method:'PATCH',filter:{
+    tenant_id:eq(tenantId),id:eq(id),...(expectedToken?{verification_token:eq(expectedToken)}:{})
+   },body:updates});
+  },
   async ownedSite(tenantId,id){const rows=await request('seo_sites',{filter:{tenant_id:eq(tenantId),id:eq(id)},limit:1});return rows[0]||null;},
   async listOpportunities(tenantId,siteId){return request('seo_opportunities',{filter:filter(tenantId,siteId),order:'priority.desc',limit:200});},
   async importOpportunities(tenantId,siteId,rows){return request('seo_opportunities',{method:'POST',body:rows.map(row=>({...row,tenant_id:tenantId,site_id:siteId})),upsert:true});},
