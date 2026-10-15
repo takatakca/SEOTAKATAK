@@ -35,7 +35,7 @@ test('public site hosts and Search Console rows validated',()=>{
 test('cross-workspace site read and write denied',async()=>{
  const now=Date.now;try{Date.now=()=>1001000;
   assert.equal((await req('GET','/v1/sites/'+siteId+'/opportunities',null,jwt(B))).code,404);
-  assert.equal((await req('POST','/v1/sites/'+siteId+'/opportunities/import',{source:'search_console',rows:[{keyword:'seo',clicks:1,impressions:10,position:10}]},jwt(B))).code,404);
+  assert.equal((await req('POST','/v1/sites/'+siteId+'/opportunities/import',{source:'search_console',rows:[{keyword:'seo',clicks:1,impressions:10,position:10}]},jwt(B,['seo:import']))).code,404);
  }finally{Date.now=now;}
 });
 test('read-only permission cannot write',async()=>{
