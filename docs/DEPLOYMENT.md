@@ -30,3 +30,7 @@ The workflow supplies `EXPECTED_COMMIT_SHA` from its successful CI run to `scrip
 ### DNS verification acceptance test (after database approval)
 
 For a domain you control, register it under the authorized TAKATAK client workspace and start a DNS challenge in `/dashboard/seo/portfolio/{siteId}`. Publish the exact TXT host/value in your DNS provider. Before propagation, `/verification/check` must fail without recording proof. After TXT propagation, the API should return `verified:true` with `verifiedAt`, redact `verification_token` in `GET /v1/sites` and deny all challenge mutations to users without `seo:manage`. A second TAKATAK workspace must receive 404 for the first workspace site. The initial database (0001) alone is insufficient for these new endpoints; missing columns are an operator-visible 503, never silently treated as verification.
+
+### New readiness and quota acceptance
+
+The SEO application's `/ready` now requires both migrations 0001 and 0002 and all four data tables. Apply these only after documented owner/DB-coordinator approval. Before enabling public traffic, verify a missing column produces HTTP 503, while the fully migrated database produces HTTP 200 with `{ok:true,status:"ready",database:"reachable",schema:"verified"}`. Confirm real client A and client B remain isolated and repeated authenticated requests return HTTP 429 with Retry-After; configure shared edge limits separately for multi-instance deployments.

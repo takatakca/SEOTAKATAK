@@ -52,3 +52,13 @@
 - **Ongoing task**: verify full V1 PR CI after DNS UI update; fix any typecheck/build/contract issues on the PR branch, then hand green PR to the designated V1 coordinator.
 - **Production**: NOT LIVE. Owner-approved existing database and migration 0001 + 0002, Coolify app/tokens/HTTPS, V1 runtime settings and coordinator release are still required. All specifics tracked in SEOTAKATAK issue #1; no secret value is documented here.
 - **Exact next action**: retrieve new GitHub branch SHA + CI run, inspect failures if any; once green, test real DNS proof after owner-approved DB migration and Coolify deployment. Continue independent work from TASK_QUEUE without inventing deployments.
+
+## Latest checkpoint — rate limits and schema readiness (2026-10-15)
+
+- **Last completed code SHA**: `c1d7861fe731d0fd7b14ac6cddcea8e8c3e5ab6d`. Backend GitHub CI **passed** in run `38799814574`; subsequent production job `38799844905` **failed** on the previously known missing Coolify production settings.
+- **Files changed**: `src/rate-limit.mjs`, `tests/rate-limit.test.mjs`, `src/app.mjs`, `src/server.mjs`, `src/store.mjs`, `tests/store.test.mjs`, `tests/engine.test.mjs`, `package.json`. Verified with GitHub `npm run check`, bash syntax and Docker image CI. No real database migrated or provisioned.
+- **Rate limits**: 120 GET/min, 30 writes/min, 8 trusted Search Console imports/minute per workspace+user on each Node process; HTTP 429 with Retry-After. Not a global cross-instance quota; a production proxy/shared quota is still required at scale.
+- **Readiness**: `/ready` validates PostgREST's required columns on sites (including migration 0002), opportunities, prospects and briefs with limit zero. It now fails 503 before migrations are applied. Test the real deployed database before go-live.
+- **V1 integration**: PR #182 includes DNS ownership challenge UI and a real content-brief draft form; latest full V1 CI must be verified and merger is coordinator-only.
+- **Access blocker**: Owner-approved non-billable existing DB, migration approval, Coolify application/HTTPS/UUID/token and V1 runtime secrets; see SEOTAKATAK issue #1. No secrets are in the repository.
+- **Exact next action**: check the newest V1 PR CI logs and fix failing tests; get coordinator approval for PR #182. Separately obtain infra admin settings from issue #1, apply approved SQL 0001+0002, validate the endpoint /ready and two-client DNS/SEO smoke, then verify deployed SHA. No external coding orchestrator was configured.

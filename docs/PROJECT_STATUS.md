@@ -34,3 +34,9 @@ Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks C
 - Read-only SEO users cannot fetch or start the TXT challenge; site-list and site-detail JSON explicitly redact stored challenge token and issuance time.
 - New **pending** SQL migration `sql/0002_domain_verification.sql` adds challenge/verified columns. Neither this nor `0001` was executed against production.
 - Backend CI passed on code SHA `4bcdc57c769ba92228e8c98090180a85c904d2bf`, run `38798985084`; corresponding production deployment `38799021739` failed due previously documented Coolify setup blockage. Client dashboard integration awaits V1 PR #182 coordinator review.
+
+### 2026-10-15 runtime safety update
+
+- Per-tenant-and-signer quotas enforced in-process (120 reads / 30 writes / 8 imports per minute, with 429 and Retry-After). This is **not** a shared multi-instance limiter.
+- Readiness checks the exact columns of sites/verification, opportunities, prospects and briefs via PostgREST without returning customer data. A missing DNS verification migration now prevents production from reporting ready.
+- Code CI passed at `c1d7861f`, run `38799814574`; following deployment job `38799844905` failed. **No successful live deployment has been demonstrated.**

@@ -1,5 +1,7 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · c1d7861f → CI 38799814574 PASS | Added process-local per-tenant read/write/import quotas with HTTP 429, tightened /ready to validate all SEO tables and verification schema; deployment still blocked by absent Coolify configuration | Approved migrations 0001+0002, real DB/Coolify release, then two-tenant smoke; integrate V1 PR #182
+
 2026-10-15 | GitHub agent | main · 4bcdc57c → CI 38798985084 PASS | DNS ownership verification with 7-day TXT challenge, tenant scopes, rotated-token guard, secret redaction; migration 0002 pending approval | Continue V1 PR #182 CI and ownership UI; production remains blocked by Coolify and DB setup
 
 2026-10-15 | ChatGPT/GitHub agent | main · bde41fb7 → CI 38794560027 | BUILT / CI PASS / PROD BLOCKED | CI-gated Coolify deploy validates exact SHA against /api/v1/deployments, tests mock wrong-SHA and missing config; production issue #1 | Coolify admin must configure deployment; V1 PR #182 latest CI and coordinator review

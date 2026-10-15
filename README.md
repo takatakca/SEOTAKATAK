@@ -49,3 +49,7 @@ Requires Node 22. Run npm run check. No third-party NPM packages required.
 Only independent editorial outreach, relevant content and compliant citations; no purchased link packages or automated manipulative reciprocal links. Search Console measurements are evidence-backed, not invented. Do not expose cross-tenant metrics. Store service role secrets server-side only.
 
 See docs/ROADMAP.md for the remaining phases and production prerequisites.
+
+## Abuse prevention and complete schema readiness
+
+The Node service applies per-process authenticated request quotas: read 120/minute, write 30/minute and trusted Search Console ingestion 8/minute per tenant and signer. The API returns HTTP 429 and Retry-After when exceeded. These process-local limits are not an organization-wide distributed quota; production should additionally apply Coolify/reverse-proxy or shared-store limits. The public `/ready` endpoint verifies required columns in all four SEO PostgREST tables, **including verification columns from SQL migration 0002**, without returning tenant records. It cannot report readiness before both migrations are present.
