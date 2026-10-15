@@ -20,3 +20,7 @@ Last audit: **2026-10-15** · GitHub repository: `takatakca/SEOTAKATAK` · branc
 
 ## Production criterion
 CI success alone is insufficient. Require approved database, deployed HTTPS container, successful /ready DB probe, authenticated V1 client-scoped cross-tenant smoke, verified version and official V1 production promotion.
+
+## Most recent verified checks
+
+At backend SHA `c1be583a1c18750cc4fd2c9dae49a54a87992ede`, GitHub CI run `38793391043` passed. Automatic production job `38793423983` failed; see [release blocker issue #1](https://github.com/takatakca/SEOTAKATAK/issues/1). No hosted service is confirmed.
