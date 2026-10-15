@@ -10,11 +10,11 @@ const shell=[
 '#!/usr/bin/env bash',
 'case "$*" in',
 ' *"/api/v1/deployments/deployment12345"*)',
-'  printf '{"status":"finished","commit":"%s"}\\n' "$MOCK_COOLIFY_COMMIT";;',
+"  printf '{\"status\":\"finished\",\"commit\":\"%s\"}\\n' \"$MOCK_COOLIFY_COMMIT\";;",
 ' *"/api/v1/deploy"*)',
-'  printf '{"deployments":[{"resource_uuid":"resource12345","deployment_uuid":"deployment12345"}]}\\n';;',
+"  printf '{\"deployments\":[{\"resource_uuid\":\"resource12345\",\"deployment_uuid\":\"deployment12345\"}]}\\n';;",
 ' *"/ready"*)',
-'  printf '{"ok":true,"status":"ready","database":"reachable"}\\n';;',
+"  printf '{\"ok\":true,\"status\":\"ready\",\"database\":\"reachable\"}\\n';;",
 ' *) echo "Unexpected endpoint" >&2;exit 22;;',
 'esac'
 ].join('\n')+'\n';
