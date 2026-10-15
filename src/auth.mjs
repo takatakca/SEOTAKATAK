@@ -4,7 +4,7 @@ const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url')
 const sign = (data,key) => createHmac('sha256',key).update(data).digest();
 export function issueToken({tenantId,subject,permissions=['seo:view'],now=Math.floor(Date.now()/1000)},key){
  if(!key||key.length<32||!UUID.test(tenantId)||typeof subject!=='string'||!subject) throw new Error('Invalid signing identity');
- if(!Array.isArray(permissions)||permissions.some(p=>!['seo:view','seo:manage'].includes(p)))throw new Error('Invalid permissions');
+ if(!Array.isArray(permissions)||permissions.some(p=>!['seo:view','seo:manage','seo:import'].includes(p)))throw new Error('Invalid permissions');
  const data=encode({alg:'HS256',typ:'JWT'})+'.'+encode({iss:'takatak-v1',aud:'seotakatak',sub:subject,tenant_id:tenantId,permissions,iat:now,exp:now+60});
  return data+'.'+sign(data,key).toString('base64url');
 }
@@ -19,7 +19,7 @@ export function verifyBearer(authHeader,key,now=Math.floor(Date.now()/1000)){
   const payload=JSON.parse(Buffer.from(b,'base64url').toString());
   if(header.alg!=='HS256'||header.typ!=='JWT'||payload.iss!=='takatak-v1'||payload.aud!=='seotakatak'||!UUID.test(payload.tenant_id)||typeof payload.sub!=='string'||!payload.sub||payload.sub.length>128)return null;
   if(!Number.isInteger(payload.iat)||!Number.isInteger(payload.exp)||payload.iat>now+30||payload.iat<now-90||payload.exp<=now||payload.exp>payload.iat+60)return null;
-  if(!Array.isArray(payload.permissions)||payload.permissions.length>2||payload.permissions.some(p=>!['seo:view','seo:manage'].includes(p)))return null;
+  if(!Array.isArray(payload.permissions)||payload.permissions.length>3||payload.permissions.some(p=>!['seo:view','seo:manage','seo:import'].includes(p)))return null;
   return {tenantId:payload.tenant_id,subject:payload.sub,permissions:payload.permissions};
  }catch{return null;}
 }

@@ -43,9 +43,12 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
  }
  const identity=verifyBearer(authorization,signingKey);
  if(!identity)return fail(401,'unauthorized');
- if(!hasScope(identity,'seo:view'))return fail(403,'permission_denied');
- if(method!=='GET'&&!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
  const parts=path.split('/').filter(Boolean),tenantId=identity.tenantId;
+ const importRoute=parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
+   ID.test(parts[2])&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST';
+ if(method==='GET'&&!hasScope(identity,'seo:view'))return fail(403,'permission_denied');
+ if(importRoute&&!hasScope(identity,'seo:import'))return fail(403,'import_permission_required');
+ if(method!=='GET'&&!importRoute&&!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
  if(parts[0]!=='v1')return fail(404,'not_found');
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{

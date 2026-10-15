@@ -53,8 +53,9 @@ test('site creation uses the validated signed workspace',async()=>{
 test('only Search Console data is importable',async()=>{
  const now=Date.now;try{Date.now=()=>1001000;
  const path='/v1/sites/'+siteId+'/opportunities/import',row={keyword:'food Montreal',clicks:2,impressions:123,position:8};
- assert.equal((await req('POST',path,{source:'search_console',rows:[row]})).result.imported,1);
- assert.equal((await req('POST',path,{source:'made_up',rows:[row]})).code,400);
+ assert.equal((await req('POST',path,{source:'search_console',rows:[row]},jwt(A,['seo:manage']))).code,403);
+ assert.equal((await req('POST',path,{source:'search_console',rows:[row]},jwt(A,['seo:import']))).result.imported,1);
+ assert.equal((await req('POST',path,{source:'made_up',rows:[row]},jwt(A,['seo:import']))).code,400);
  }finally{Date.now=now;}
 });
 test('prospects start unearned; purchased status prohibited',async()=>{
@@ -72,4 +73,13 @@ test('readiness checks actual database connectivity',async()=>{
  assert.equal(ready.code,200);
  const offline=await dispatch({method:'GET',path:'/ready'}, {store:{listSites:async()=>{throw new Error('offline')}},signingKey:key});
  assert.equal(offline.code,503);
+});
+
+test('ingestion tokens cannot alter prospects, register sites or read portfolio',async()=>{
+ const saved=Date.now;try{Date.now=()=>1001000;
+ const imported=jwt(A,['seo:import']);
+ assert.equal((await req('GET','/v1/sites',null,imported)).code,403);
+ assert.equal((await req('POST','/v1/sites',{domain:'another.ca',niche:'test',market:'CA'},imported)).code,403);
+ assert.equal((await req('POST','/v1/sites/'+siteId+'/briefs',{keyword:'seo',angle:'A long content description'},imported)).code,403);
+ }finally{Date.now=saved;}
 });
