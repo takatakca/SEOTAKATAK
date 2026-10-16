@@ -16,12 +16,20 @@ const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url||'/', 'http://localhost:'+port);
  if(req.method==='OPTIONS'){res.writeHead(405).end(JSON.stringify({ok:false,error:'method_not_allowed'}));return;}
  let body;
+ // Reject oversized uploads while streaming bytes, not after UTF-8 decoding.
+ // Destroying the request immediately can interrupt the 413 response, so drain
+ // only the remaining bounded transport data after the error is sent.
  if(req.method==='POST'||req.method==='PATCH'){
   if(!(req.headers['content-type']||'').startsWith('application/json')){res.writeHead(415).end(JSON.stringify({ok:false,error:'json_required'}));return;}
   try{
-   let raw='';
-   for await(const part of req){raw+=part;if(raw.length>65536){res.writeHead(413).end(JSON.stringify({ok:false,error:'payload_too_large'}));return;}}
-   body=JSON.parse(raw);
+   const chunks=[];let bytes=0,tooLarge=false;
+   for await(const part of req){
+    bytes+=part.byteLength;
+    if(bytes>65536){tooLarge=true;break;}
+    chunks.push(part);
+   }
+   if(tooLarge){res.writeHead(413).end(JSON.stringify({ok:false,error:'payload_too_large'}));return;}
+   body=JSON.parse(Buffer.concat(chunks).toString('utf8'));
   }catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_json'}));return;}
  }
  const response=await dispatch({method:req.method,path:url.pathname,authorization:req.headers.authorization,body},{store,signingKey:key});
