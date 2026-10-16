@@ -66,7 +66,7 @@ begin
   tenant_id,site_id,domain_sha256,actor_subject,
   opportunities_removed,prospects_removed,briefs_removed
  ) values (
-  p_tenant_id,p_site_id,encode(digest(v_domain,'sha256'),'hex'),
+  p_tenant_id,p_site_id,encode(sha256(convert_to(v_domain,'UTF8')),'hex'),
   p_actor_subject,v_o,v_p,v_b
  ) returning id,seo_site_deletion_receipts.deleted_at into v_receipt,v_time;
  delete from public.seo_sites s where s.tenant_id=p_tenant_id and s.id=p_site_id;
