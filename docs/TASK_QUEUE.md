@@ -22,7 +22,9 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [ ] Verify running /health and /ready, actual database connectivity and signed V1 service integration for separate client workspaces.
 - [ ] Add reliable official backlink verification with evidence snapshots, quality review and broken-link alerts.
 - [ ] Add per-client scheduled Search Console imports (quota, deduplication, rate limits, audit receipts, verified-domain mapping).
-- [ ] Add multilingual original content drafting and mandatory approval before any CMS publication; verified ownership + consent for publishing.
+- [x] Add one-time manager-controlled editorial approval or rejection of unpublished content briefs with reviewer attribution and no auto-publishing.
+- [ ] Obtain database owner approval for `sql/0003_brief_editorial_review.sql` after 0001+0002; verify schema and real review transition.
+- [ ] Add multilingual original content creation, explicit CMS connection and separate verified-domain publishing consent (not part of editorial approval).
 - [ ] Add evidence-based AI answer citation observation through approved provider/API; no synthetic positions presented as observed.
 - [ ] Add per-client usage limits, privacy retention/erase flow, billing entitlements if approved, performance/security load tests, metrics/alarms, optional automation service.
 - [ ] Verify actual deployed git SHA; document rollback rehearsal and owner sign-off.

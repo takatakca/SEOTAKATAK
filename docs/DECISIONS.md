@@ -28,3 +28,7 @@ An authorized manager may irreversibly remove a single SEO site by submitting `D
 ## Public readiness load-shedding
 
 `GET /ready` remains public for infrastructure health checks. Each Node process now caches a successful schema probe for 10 seconds and a failing probe for 5 seconds; overlapping checks share one pending operation. Negative cached checks remain 503. This does not conceal a failing schema indefinitely and prevents untrusted traffic from initiating four PostgREST requests per HTTP request. A separate shared/edge rate limit is still required for multi-instance deployment.
+
+## Human-only editorial review
+
+A content brief starts as an unpublished draft. An authorized workspace manager may issue one signed `PATCH /v1/sites/:siteId/briefs/:briefId/review` transitioning `status=draft` to `approved` or `rejected`. The database stores the signed TAKATAK profile ID, review timestamp and optional decision note; rejection requires a reason. The tenant/site/brief AND draft status appear in the same atomic PostgREST filter. General readers see state and note, not the profile identifier. Review decisions are final unless a future expressly approved amendment workflow is added. Approval is for planning only, with no CMS API, posting, monetization or generated article. Migration 0003 is mandatory and requires owner approval.

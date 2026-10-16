@@ -3,7 +3,7 @@
 Source of truth: `takatakca/SEOTAKATAK` main. Read `deploy/COOLIFY.md` for the GitHub Action details.
 
 ## Prerequisites (currently not all configured)
-1. Obtain owner approval to use an **existing or approved non-billable Supabase PostgreSQL** project; take a backup and review `sql/0001_seo_core.sql` and the newer `sql/0002_domain_verification.sql` migration, in that order. Do not apply to TAKATAK V1's live database without its release coordinator.
+1. Obtain owner approval to use an **existing or approved non-billable Supabase PostgreSQL** project; take a backup and review `sql/0001_seo_core.sql` then `sql/0002_domain_verification.sql`, then `sql/0003_brief_editorial_review.sql`, in that order. Do not apply to TAKATAK V1's live database without its release coordinator.
 2. In Coolify (Contabo instance only after verifying its active hostname), configure one SEOTAKATAK Dockerfile application pointing to this GitHub repository `main`, Node 22 port 3000, HTTPS/valid TLS. Runtime env: `NODE_ENV=production`, `SEO_SUPABASE_URL`, `SEO_SUPABASE_SERVICE_ROLE_KEY`, `SEOTAKATAK_SIGNING_KEY` (random >=32 bytes; same shared secret in V1). Never put secrets in Git.
 3. In SEOTAKATAK GitHub **Settings → Environments → production**, variable `SEOTAKATAK_COOLIFY_API_URL` (trusted Coolify HTTPS origin), variable `SEOTAKATAK_COOLIFY_APP_UUID`, variable `SEOTAKATAK_HEALTH_URL` (service HTTPS origin), secret `SEOTAKATAK_COOLIFY_API_TOKEN` (least-privilege API token).
 4. In TAKATAK V1 runtime configure `SEOTAKATAK_API_URL` (service HTTPS origin) and matching `SEOTAKATAK_SIGNING_KEY`. GSC imports additionally require verified domain-linked Google service account access.
@@ -42,3 +42,7 @@ After migration approval and a **live** SEO service deploy, create a disposable 
 ### Readiness probe concurrency acceptance
 
 The backend now collapses many simultaneous `GET /ready` calls to one set of four PostgREST schema requests. It caches ready for 10 seconds and unavailable for 5 seconds, per running instance. After migrations are applied, confirm a valid /ready response and that an intentionally unreachable PostgREST host causes 503 (and recovers after the short failure TTL). This is load-shedding, not a distributed rate limiter.
+
+### Migration 0003 and editorial review smoke (owner-approved staging only)
+
+Review and apply `sql/0003_brief_editorial_review.sql` strictly after 0001 and 0002. Back up the database before changes; validate that existing draft records satisfy the new constraints. A 200 /ready now requires `reviewed_at`, `reviewed_by` and `review_note` columns on `seo_briefs`. Create an original draft in a disposable client workspace; a manager can approve it or reject it with at least 10 characters of explanation, and only one decision can succeed because the PostgREST PATCH contains `status=eq.draft`. A second decision must return 409. A read-only client or manager of another workspace cannot review the draft. Confirm a draft becomes a reviewed editorial plan, **never a published CMS article**, and that list responses do not leak the reviewer profile ID.

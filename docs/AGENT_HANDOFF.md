@@ -92,3 +92,13 @@
 - **Current task:** validate the full newest CI of V1 PR #182, then hand it to its designated coordinator for authorized review/merge/deploy. Do not touch V1 main or production.
 - **Remaining blockers:** Coolify configuration / environment variables / token / HTTPS app, approved existing/non-billable DB and SQL migrations, V1 coordinator. See open SEOTAKATAK issue #1. No autonomous agent restart orchestrator is installed.
 - **Next exact action:** read newest V1 PR head and full CI status; correct any failure. Once infrastructure owner configures GitHub production settings and applies approved DB migrations, use CI-gated deployment and verify same Git SHA, /ready, separate client A/B site records, DNS verification and staging-only deletion.
+
+## Editorial workflow development checkpoint — 2026-10-15
+
+- **Most recent implemented work:** immutable, human-only SEO brief review in `src/app.mjs` and `src/store.mjs`, tests in `tests/engine.test.mjs` and `tests/store.test.mjs`, proposed `sql/0003_brief_editorial_review.sql`. The signed actor is retained in the datastore and never exposed in list API. Reviewed briefs are not published.
+- **Code SHA before this document commit:** `fc6120911ea2609620424c9ef382af0b91e02ec5`; previous feature SHA `3fc053d347b07e794cf9d4b8385620d77c201729` passed CI `38842223371`. Check latest CI for `fc612091` before release.
+- **V1 PR #182:** editorial review UI, server action and signed bridge at branch `feat/seotakatak-free-tools-20261015`, code SHA `3c8912637fd4f827d443fe48f6c7a9a34f99d6a7`. Full newest V1 CI is in progress; preceding branch `18e846fd` passed full CI `38841472062`.
+- **Production reality:** NO live SEO API confirmed. Coolify environment missing `COOLIFY_API_URL`, plus database migrations 0001, 0002 and now 0003 all require explicit approved database. Do not run SQL or change V1 production without V1 coordinator. See open issue #1.
+- **Files affected:** backend app/store, engine/store tests, SQL 0003, five docs, README and WORKLOG; V1 bridge, site page/actions, SEO QA test and five V1 docs.
+- **Tests/commands:** `npm run check`, `bash -n scripts/deploy-coolify.sh`, `docker build -t seotakatak:ci .` through GitHub CI; no live DB or provider external actions. Verify no second review, rejected note requirement, tenant isolation, and reviewed_by privacy in live staging.
+- **Next action:** check backend CI for `fc612091` and V1 PR #182 newest CI; fix actual failing jobs. With both green, hand V1 PR to coordinator. Wait for approved migrations 0001→0002→0003 and verified Coolify settings before true deployment and multi-client smoke. No restart orchestrator is configured.

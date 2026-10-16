@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · fc612091 (CI pending) | Added editor-attributed one-shot human review of drafts (approved/rejected), reason-required rejection, immutable state filter, no CMS publication; added pending SQL migration 0003 and V1 PR #182 UI | Verify latest CI; owner approves migrations 0001→0002→0003; V1 coordinator reviews PR; prod Coolify missing values
+
+
 2026-10-15 | GitHub agent | main · 220902cd → CI 38841642177 PASS | Hardened public /ready with concurrent request collapse and 10-second positive/5-second negative schema-probe caching, preventing unauthenticated 4x PostgREST amplification | Real deploy still blocked by missing Coolify environment; ensure V1 PR #182 fully green and reviewed
 
 

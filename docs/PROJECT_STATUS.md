@@ -55,3 +55,7 @@ Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks C
 ### Public readiness hardening (2026-10-15)
 
 The public `/ready` endpoint now coalesces concurrent PostgREST schema checks into one four-table probe. Successful checks cache for 10 seconds; failed checks for 5 seconds, always responding unavailable on a cached failure. This reduces unauthenticated database-request amplification, but is not a global edge rate limiter. Backend SHA `220902cd67211aabbbe8c9bb380b722072883878` passed `SEOTAKATAK CI` run `38841642177`; following Coolify deploy `38841667084` failed without configured deployment settings, not because of test failures.
+
+### Original content brief review — 2026-10-15
+
+A client workspace manager can move an unpublished SEO content brief from `draft` to `approved` or `rejected` once. The signed server authenticates the reviewer; the PostgREST PATCH constrains tenant, site, brief ID and `status=eq.draft` in one atomic update. Rejections require a meaningful reason; reviewer identity is saved server-side but omitted from the general list response. An approved **editorial plan is not a published article**. SQL `0003_brief_editorial_review.sql` is a proposed, *unapplied* migration adding review fields, constraints and allowed statuses; readiness now requires its columns. A coordinator must approve migration order 0001→0002→0003 before a live /ready can pass. Backend CI passed on implementation SHA `3fc053d3`, run `38842223371`; subsequent immutable-review tests must still be checked.

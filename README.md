@@ -33,7 +33,8 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 - POST /v1/sites/:siteId/opportunities/import {source:"search_console",rows:[{keyword,clicks,impressions,position}]} — requires dedicated seo:import server scope; seo:manage alone is forbidden
 - GET/POST /v1/sites/:siteId/prospects; POST {publication,url,relevance}
 - PATCH /v1/sites/:siteId/prospects/:id/status {status}
-- GET/POST /v1/sites/:siteId/briefs; POST {keyword,angle}
+- GET/POST /v1/sites/:siteId/briefs; POST {keyword,angle} (always begins as an unpublished draft)
+- PATCH /v1/sites/:siteId/briefs/:briefId/review {status:"approved"|"rejected",note} — a one-time server-attributed editorial decision, never a CMS publication; rejected reviews require a 10+ character reason
 
 ## Install & deploy
 
