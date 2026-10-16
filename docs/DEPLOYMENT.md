@@ -38,3 +38,7 @@ The SEO application's `/ready` now requires both migrations 0001 and 0002 and al
 ### Controlled deletion smoke on an approved staging workspace
 
 After migration approval and a **live** SEO service deploy, create a disposable domain/site under staging tenant A and add a draft, a prospect and a query import. First confirm a viewer's `DELETE` returns 403, another tenant's manager gets 404, and a wrong domain or unchecked acknowledgment returns 400. With the correct typed hostname and independent acknowledgment, verify a manager's `DELETE` returns `{ok:true,deleted:true}`; subsequent reads show no site and no child SEO records. Confirm that the central TAKATAK client account still exists. Do not perform this destructive smoke on a customer's production website.
+
+### Readiness probe concurrency acceptance
+
+The backend now collapses many simultaneous `GET /ready` calls to one set of four PostgREST schema requests. It caches ready for 10 seconds and unavailable for 5 seconds, per running instance. After migrations are applied, confirm a valid /ready response and that an intentionally unreachable PostgREST host causes 503 (and recovers after the short failure TTL). This is load-shedding, not a distributed rate limiter.

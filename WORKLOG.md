@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · 220902cd → CI 38841642177 PASS | Hardened public /ready with concurrent request collapse and 10-second positive/5-second negative schema-probe caching, preventing unauthenticated 4x PostgREST amplification | Real deploy still blocked by missing Coolify environment; ensure V1 PR #182 fully green and reviewed
+
+
 2026-10-15 | GitHub agent | main · 6308c81f → CI 38841219269 PASS | Built real HTTP server regression checks and tenant-scoped permanent deletion of SEO sites with dual confirmation and SQL cascade; secured DELETE JSON parsing; V1 PR #182 UI pending CI | Owner Coolify/database gate remains blocked; coordinator reviews V1 PR; smoke deletion on approved test workspace
 
 

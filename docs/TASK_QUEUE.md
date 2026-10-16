@@ -10,6 +10,7 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Correct JSON request-size guard to count raw bytes, including multibyte input.
 - [x] Implement manager-only dual-confirmation deletion of one tenant's SEO website and cascade records; verified via API and HTTP tests.
 - [ ] Add whole-workspace export/erasure receipts and approved retention rules without touching TAKATAK central identity.
+- [x] Prevent public /ready request amplification with bounded per-store success/failure probe caching and concurrent-call coalescing.
 - [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.
 - [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.

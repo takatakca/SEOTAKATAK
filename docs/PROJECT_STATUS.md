@@ -51,3 +51,7 @@ Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks C
 - `seo_sites` is removed through a tenant-filtered PostgREST DELETE. Migration 0001 already defines foreign-key `ON DELETE CASCADE` for opportunity, backlink prospect and content-brief records. This never deletes the TAKATAK identity/client workspace.
 - Backend API and actual Node HTTP regression tests passed CI at `6308c81fd97156dab620690bd5fbb629875299c0`, run `38841219269`. Production remains not verified (Coolify GitHub environment missing `COOLIFY_API_URL`).
 - TAKATAK V1 PR #182 adds destructive-action UI with required typed domain + acknowledgment. Its CI must be checked before coordinator review. This feature does not implement full GDPR erasure of other TAKATAK product records.
+
+### Public readiness hardening (2026-10-15)
+
+The public `/ready` endpoint now coalesces concurrent PostgREST schema checks into one four-table probe. Successful checks cache for 10 seconds; failed checks for 5 seconds, always responding unavailable on a cached failure. This reduces unauthenticated database-request amplification, but is not a global edge rate limiter. Backend SHA `220902cd67211aabbbe8c9bb380b722072883878` passed `SEOTAKATAK CI` run `38841642177`; following Coolify deploy `38841667084` failed without configured deployment settings, not because of test failures.

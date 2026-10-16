@@ -24,3 +24,7 @@ Use a small, deterministic, process-local authenticated rate gate with independe
 ## Controlled SEO-site erasure and retention boundary (2026-10-15)
 
 An authorized manager may irreversibly remove a single SEO site by submitting `DELETE /v1/sites/{id}` with both `confirmDelete:true` and `confirmDomain` equal to the site's stored hostname. The server derives tenant from a signed TAKATAK token, loads the site under that tenant, and performs an identically scoped SQL DELETE. Existing `ON DELETE CASCADE` references remove SEO opportunity, prospect and editorial-brief rows; TAKATAK V1 retains all master accounts and membership. The browser's typed confirmation is a UX safeguard, never a substitute for server-side role/tenant enforcement. A separate retention and evidence-erasure policy still requires owner approval; do not claim one-site deletion covers the entire ecosystem.
+
+## Public readiness load-shedding
+
+`GET /ready` remains public for infrastructure health checks. Each Node process now caches a successful schema probe for 10 seconds and a failing probe for 5 seconds; overlapping checks share one pending operation. Negative cached checks remain 503. This does not conceal a failing schema indefinitely and prevents untrusted traffic from initiating four PostgREST requests per HTTP request. A separate shared/edge rate limit is still required for multi-instance deployment.
