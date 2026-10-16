@@ -55,3 +55,7 @@ See docs/ROADMAP.md for the remaining phases and production prerequisites.
 ## Abuse prevention and complete schema readiness
 
 The Node service applies per-process authenticated request quotas: read 120/minute, write 30/minute and trusted Search Console ingestion 8/minute per tenant and signer. The API returns HTTP 429 and Retry-After when exceeded. These process-local limits are not an organization-wide distributed quota; production should additionally apply Coolify/reverse-proxy or shared-store limits. The public `/ready` endpoint verifies required columns in all four SEO PostgREST tables, **including verification columns from SQL migration 0002**, without returning tenant records. It cannot report readiness before both migrations are present.
+
+## Isolated SQL migration verification
+
+`SEOTAKATAK CI` now starts a disposable PostgreSQL 16 container, bootstraps only its test-only Supabase `anon` and `authenticated` roles, runs migrations `0001`, `0002`, `0003` in order and asserts review consistency, composite tenant foreign keys and cascading deletion in a rollback transaction. Run `bash scripts/test-sql.sh` where Docker is available. **This never migrates production or connects to a paid database.** Real migrations still require owner approval, backups and release coordination.

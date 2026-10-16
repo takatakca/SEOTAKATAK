@@ -32,3 +32,7 @@ An authorized manager may irreversibly remove a single SEO site by submitting `D
 ## Human-only editorial review
 
 A content brief starts as an unpublished draft. An authorized workspace manager may issue one signed `PATCH /v1/sites/:siteId/briefs/:briefId/review` transitioning `status=draft` to `approved` or `rejected`. The database stores the signed TAKATAK profile ID, review timestamp and optional decision note; rejection requires a reason. The tenant/site/brief AND draft status appear in the same atomic PostgREST filter. General readers see state and note, not the profile identifier. Review decisions are final unless a future expressly approved amendment workflow is added. Approval is for planning only, with no CMS API, posting, monetization or generated article. Migration 0003 is mandatory and requires owner approval.
+
+### Schema validation without production risk
+
+Before an approved migration is applied, every source change must pass GitHub's disposable PostgreSQL 16 migration smoke. Vanilla Postgres does not provide Supabase's `anon`/`authenticated` roles, so only the throwaway CI container bootstraps them. Database schema tests use a rollback transaction and cover cross-tenant composite FKs, editorial status invariants and cascading data deletion. No release agent executes this script against production. It cannot validate live Supabase configuration or replace owner approval.

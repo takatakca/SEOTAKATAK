@@ -46,3 +46,7 @@ The backend now collapses many simultaneous `GET /ready` calls to one set of fou
 ### Migration 0003 and editorial review smoke (owner-approved staging only)
 
 Review and apply `sql/0003_brief_editorial_review.sql` strictly after 0001 and 0002. Back up the database before changes; validate that existing draft records satisfy the new constraints. A 200 /ready now requires `reviewed_at`, `reviewed_by` and `review_note` columns on `seo_briefs`. Create an original draft in a disposable client workspace; a manager can approve it or reject it with at least 10 characters of explanation, and only one decision can succeed because the PostgREST PATCH contains `status=eq.draft`. A second decision must return 409. A read-only client or manager of another workspace cannot review the draft. Confirm a draft becomes a reviewed editorial plan, **never a published CMS article**, and that list responses do not leak the reviewer profile ID.
+
+### Tested SQL migration chain (GitHub CI)
+
+The non-production `scripts/test-sql.sh` boots `postgres:16-alpine` on the GitHub runner and provisions the standard Supabase-specific `anon`/`authenticated` roles **inside this disposable container only**. CI then executes migrations `0001`, `0002`, `0003` and a transactional `tests/sql/schema-smoke.sql` to validate foreign keys, review constraints and SEO-site deletion cascading. This test passed as part of `38842836948`. It does not provision/alter the owner database, and cannot substitute for real migrated PostgREST `/ready`, RLS, auth and two-client smoke checks.

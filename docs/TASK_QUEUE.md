@@ -13,6 +13,7 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Prevent public /ready request amplification with bounded per-store success/failure probe caching and concurrent-call coalescing.
 - [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.
+- [x] Add real PostgreSQL 16 CI migration execution with 0001→0002→0003 and FK/review/cascade assertions.
 - [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.
 - [x] Confirm backend code CI run 38793391043 passed; fixed initial regression test expectations.
 - [ ] Confirm latest V1 PR #182 full CI after all updates; fix only actual failures.

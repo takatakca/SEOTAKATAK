@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · 9df805b7 → CI 38842836948 PASS | New isolated PostgreSQL 16 migration smoke: applies 0001→0002→0003, checks immutable editorial reviews, tenant foreign keys and SEO cascade; fixes CI bootstrap of Supabase roles | V1 PR #182 full CI, coordinator approval, actual Coolify + database migration/release still required
+
+
 2026-10-15 | GitHub agent | main · fc612091 (CI pending) | Added editor-attributed one-shot human review of drafts (approved/rejected), reason-required rejection, immutable state filter, no CMS publication; added pending SQL migration 0003 and V1 PR #182 UI | Verify latest CI; owner approves migrations 0001→0002→0003; V1 coordinator reviews PR; prod Coolify missing values
 
 

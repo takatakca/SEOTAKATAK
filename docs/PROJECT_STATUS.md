@@ -59,3 +59,7 @@ The public `/ready` endpoint now coalesces concurrent PostgREST schema checks in
 ### Original content brief review — 2026-10-15
 
 A client workspace manager can move an unpublished SEO content brief from `draft` to `approved` or `rejected` once. The signed server authenticates the reviewer; the PostgREST PATCH constrains tenant, site, brief ID and `status=eq.draft` in one atomic update. Rejections require a meaningful reason; reviewer identity is saved server-side but omitted from the general list response. An approved **editorial plan is not a published article**. SQL `0003_brief_editorial_review.sql` is a proposed, *unapplied* migration adding review fields, constraints and allowed statuses; readiness now requires its columns. A coordinator must approve migration order 0001→0002→0003 before a live /ready can pass. Backend CI passed on implementation SHA `3fc053d3`, run `38842223371`; subsequent immutable-review tests must still be checked.
+
+### PostgreSQL integration validation in GitHub Actions (2026-10-15)
+
+Isolated Postgres 16 migrations `0001→0002→0003` have now been executed successfully in CI; the test checks a real database against tenant/site FK separation, editorial reviewer metadata/rejection constraints, and cascade deletion of SEO child rows. GitHub CI **passed** SHA `9df805b778b98504036490fa5bd0a8a91d28ab30`, run `38842836948`. The temporary CI container creates Supabase-like test roles; it is not a replacement for real Supabase RLS/security validation or an approved production migration. The production Coolify blocker still exists.
