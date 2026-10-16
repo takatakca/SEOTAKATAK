@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | ChatGPT/GitHub agent | main · 24b2c1b4 → CI 38843705978 PASS | Added private per-site SEO JSON snapshot, explicit per-collection 200-row limit, allowlisted fields, no DNS/reviewer token disclosure, tenant isolation tests; V1 dashboard download added to PR #182 | V1 PR CI and coordinator review, non-billable DB/Coolify credentials pending
+
+
 2026-10-15 | GitHub agent | main · 9df805b7 → CI 38842836948 PASS | New isolated PostgreSQL 16 migration smoke: applies 0001→0002→0003, checks immutable editorial reviews, tenant foreign keys and SEO cascade; fixes CI bootstrap of Supabase roles | V1 PR #182 full CI, coordinator approval, actual Coolify + database migration/release still required
 
 

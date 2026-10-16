@@ -27,6 +27,7 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 - GET /v1/sites/:siteId/verification (seo:manage only; DNS challenge details)
 - POST /v1/sites/:siteId/verification/start (issues/rotates DNS TXT challenge)
 - POST /v1/sites/:siteId/verification/check (verifies live DNS, conditionally persists proof)
+- GET /v1/sites/:siteId/export — client-tenant-scoped **bounded JSON site snapshot** with up to 200 SEO records from each collection, explicit coverage flags and redacted DNS/reviewer secrets. NOT a full account/workspace export.
 - GET /v1/sites/:siteId/summary (explicitly sampled, evidence-aware reporting)
 - GET /v1/sites/:siteId/opportunities.csv (tenant-filtered, spreadsheet-safe CSV)
 - GET /v1/sites/:siteId/opportunities
@@ -40,7 +41,7 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 
 Requires Node 22. Run npm run check. No third-party NPM packages required.
 
-1. Review and apply `sql/0001_seo_core.sql` followed by `sql/0002_domain_verification.sql` to an explicitly authorized Supabase PostgreSQL project. This is a new schema: DO NOT change the TAKATAK V1 production DB without the database release coordinator approval.
+1. Review and apply `sql/0001_seo_core.sql` followed by `sql/0002_domain_verification.sql` and `sql/0003_brief_editorial_review.sql`, in that order, to an explicitly authorized Supabase PostgreSQL project. This is a new schema: DO NOT change the TAKATAK V1 production DB without the database release coordinator approval.
 2. Set all variables in .env.example as runtime secrets in Coolify, never at build time. The service role key must never be sent to a browser.
 3. Set identical SEOTAKATAK_SIGNING_KEY in TAKATAK V1 and the SEO service. Configure SEOTAKATAK_API_URL in TAKATAK V1, pointing to the internal HTTPS SEO API.
 4. Build using the repository Dockerfile. Check GET /health = 200, GET /ready = 200, and GET /v1/sites without a valid token = 401. Test real database reads/writes and cross-tenant access before production launch.

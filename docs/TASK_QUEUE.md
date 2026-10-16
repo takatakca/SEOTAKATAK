@@ -9,7 +9,8 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Strengthen /ready to validate four tables and migration 0002 verification columns without leaking data.
 - [x] Correct JSON request-size guard to count raw bytes, including multibyte input.
 - [x] Implement manager-only dual-confirmation deletion of one tenant's SEO website and cascade records; verified via API and HTTP tests.
-- [ ] Add whole-workspace export/erasure receipts and approved retention rules without touching TAKATAK central identity.
+- [x] Add tenant-scoped single-site JSON snapshot with sensitive field allowlists and truthful partial-result labels; V1 authenticated download route.
+- [ ] Add complete paginated workspace export, erasure receipts and an approved retention policy without touching TAKATAK central identity.
 - [x] Prevent public /ready request amplification with bounded per-store success/failure probe caching and concurrent-call coalescing.
 - [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.

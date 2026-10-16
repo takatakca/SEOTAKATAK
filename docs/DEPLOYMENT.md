@@ -50,3 +50,7 @@ Review and apply `sql/0003_brief_editorial_review.sql` strictly after 0001 and 0
 ### Tested SQL migration chain (GitHub CI)
 
 The non-production `scripts/test-sql.sh` boots `postgres:16-alpine` on the GitHub runner and provisions the standard Supabase-specific `anon`/`authenticated` roles **inside this disposable container only**. CI then executes migrations `0001`, `0002`, `0003` and a transactional `tests/sql/schema-smoke.sql` to validate foreign keys, review constraints and SEO-site deletion cascading. This test passed as part of `38842836948`. It does not provision/alter the owner database, and cannot substitute for real migrated PostgREST `/ready`, RLS, auth and two-client smoke checks.
+
+### Private SEO JSON export acceptance (approved staging only)
+
+On a disposable client A site with at least one content draft, prospective backlink and Search Console import, verify `GET /v1/sites/{id}/export` yields a `format:seotakatak-site-snapshot` JSON object, no `verification_token`, `verification_issued_at`, `reviewed_by` or service secret fields, and `coverage.guaranteedComplete:false`. A signed client B token must get 404; an import-only token must get 403. Via V1 `/dashboard/seo/portfolio/{siteId}`, download the `snapshot.json` attachment, with `Cache-Control: private, no-store` and no browser-visible backend signing secret. Records are bounded at 200 per collection and are NOT a complete account backup. No production customer records were exported in CI.

@@ -36,3 +36,7 @@ A content brief starts as an unpublished draft. An authorized workspace manager 
 ### Schema validation without production risk
 
 Before an approved migration is applied, every source change must pass GitHub's disposable PostgreSQL 16 migration smoke. Vanilla Postgres does not provide Supabase's `anon`/`authenticated` roles, so only the throwaway CI container bootstraps them. Database schema tests use a rollback transaction and cover cross-tenant composite FKs, editorial status invariants and cascading data deletion. No release agent executes this script against production. It cannot validate live Supabase configuration or replace owner approval.
+
+## Scoped customer data portability (2026-10-15)
+
+An authorized TAKATAK reader may obtain a bounded JSON snapshot for one SEO site only. The SEO API derives tenant scope exclusively from verified TAKATAK JWT, checks site ownership and explicitly allowlists exported site, opportunity, prospect and brief fields to exclude DNS TXT secret challenges, reviewer internal identifiers and any future unrecognized columns. The V1 signed proxy requires `view_dashboard` + `view_reports` in the active client workspace. The JSON snapshot is capped at 200 rows per collection and ALWAYS reports `guaranteedComplete:false`; a 200-row collection sets `limitReached` to indicate possible omissions. This is **not** a complete GDPR/Quebec privacy-access response or TAKATAK master identity export; a paginated full-workspace export requires separate work and a written retention policy.
