@@ -108,8 +108,10 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
    if(parts.length===4&&parts[3]==='verification'&&method==='GET'){
     if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
     const verified=typeof site.verified_at==='string'&&!!site.verified_at;
-    const challenge=site.verification_token&&site.verification_issued_at?
-      challengeDetails(site.domain,site.verification_token):null;
+    const issued=Date.parse(site.verification_issued_at||'');
+    const active=!verified&&!!site.verification_token&&Number.isFinite(issued)&&
+      issued<=Date.now()+60_000&&Date.now()-issued<=CHALLENGE_MAX_AGE_MS;
+    const challenge=active?challengeDetails(site.domain,site.verification_token):null;
     return ok({verified,verifiedAt:site.verified_at??null,
       challenge:verified?null:challenge?{...challenge,issuedAt:site.verification_issued_at}:null});
    }

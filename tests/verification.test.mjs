@@ -83,3 +83,17 @@ test('ordinary site response hides the DNS challenge secret while management can
  const visible=await x.run('GET',path+'/verification',x.token(A,['seo:manage']));
  assert.equal(visible.result.challenge.recordValue,issued.result.challenge.recordValue);
 });
+
+test('verification status never advertises expired or future-dated TXT challenges',async()=>{
+ const x=fixture(),path='/v1/sites/'+ID+'/verification';
+ const issued=await x.run('POST',path+'/start');
+ assert.equal(issued.code,201);
+ assert.ok((await x.run('GET',path)).result.challenge);
+ x.site.verification_issued_at=new Date(Date.now()-CHALLENGE_MAX_AGE_MS-1000).toISOString();
+ const expired=await x.run('GET',path);
+ assert.equal(expired.code,200);
+ assert.equal(expired.result.verified,false);
+ assert.equal(expired.result.challenge,null);
+ x.site.verification_issued_at=new Date(Date.now()+120000).toISOString();
+ assert.equal((await x.run('GET',path)).result.challenge,null);
+});
