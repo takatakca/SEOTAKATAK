@@ -111,3 +111,32 @@ test('editorial review is an atomic, tenant-scoped draft-to-decision update',asy
  assert.equal(url.searchParams.get('status'),'eq.draft');
  assert.equal(JSON.parse(init.body).status,'approved');
 });
+
+test('workspace export applies tenant filter, stable offset and strict safe database column lists',async()=>{
+ const calls=[];
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async(url,init)=>{calls.push({url:new URL(url),init});
+   return new Response(JSON.stringify([{id:SITE,keyword:'seo'}]),{status:200});}});
+ for(const collection of ['sites','opportunities','prospects','briefs']){
+  const result=await store.exportWorkspacePage(A,collection,200,200);
+  assert.equal(result.items.length,1);
+  assert.equal(result.hasMore,false);
+ }
+ assert.equal(calls.length,4);
+ const tables=['seo_sites','seo_opportunities','seo_prospects','seo_briefs'];
+ for(let i=0;i<calls.length;i++){
+  const {url,init}=calls[i];
+  assert.ok(url.pathname.endsWith('/'+tables[i]));
+  assert.equal(url.searchParams.get('tenant_id'),'eq.'+A);
+  assert.equal(url.searchParams.get('order'),'id.asc');
+  assert.equal(url.searchParams.get('limit'),'201');
+  assert.equal(url.searchParams.get('offset'),'200');
+  const select=url.searchParams.get('select');
+  assert.ok(select);
+  for(const secret of ['verification_token','verification_issued_at','reviewed_by']){
+   assert.equal(select.includes(secret),false,secret+' should not be selected');
+  }
+  assert.equal(init.redirect,'error');
+ }
+ await assert.rejects(()=>store.exportWorkspacePage(A,'outside',0,200),error=>error instanceof DatabaseError);
+});
