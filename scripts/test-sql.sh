@@ -16,4 +16,34 @@ for file in sql/0001_seo_core.sql sql/0002_domain_verification.sql sql/0003_brie
   docker exec -i "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci < "$file" >/dev/null
 done
 docker exec -i "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci < tests/sql/schema-smoke.sql
+# Exercise the shared rate quota under real concurrent PostgreSQL connections.
+# 20 parallel requests for an 8/minute import bucket must admit exactly 8,
+# never one allowance per process. Run only inside disposable CI database.
+quota_dir=$(mktemp -d)
+trap 'rm -rf "$quota_dir"; docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
+for n in $(seq 1 20); do
+ (
+  docker exec "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci -tAc \
+   "SELECT allowed FROM public.seo_consume_api_quota('7d87a2c9-fb84-474a-8ccc-43d6fe47605c','ci-concurrent-actor','import')" \
+   > "$quota_dir/$n"
+ ) &
+done
+wait
+passed=0
+rejected=0
+for n in $(seq 1 20); do
+ if [[ "$(tr -d '\r\n ' < "$quota_dir/$n")" == "t" ]]; then
+  passed=$((passed+1))
+ elif [[ "$(tr -d '\\r\\n ' < "$quota_dir/$n")" == "f" ]]; then
+  rejected=$((rejected+1))
+ else
+  echo "::error::Unexpected result from concurrent PostgreSQL quota operation $n"
+  exit 1
+ fi
+done
+if [[ "$passed" != 8 || "$rejected" != 12 ]]; then
+ echo "::error::Shared quota concurrency invariant failed: allowed=$passed denied=$rejected"
+ exit 1
+fi
+echo "20 concurrent import calls: 8 allowed, 12 rejected (shared quota PASS)"
 echo "SEO migrations and PostgreSQL invariants PASS"
