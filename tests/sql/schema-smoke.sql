@@ -30,7 +30,7 @@ begin
  if exists(select 1 from public.seo_briefs where site_id=site) or exists(select 1 from public.seo_opportunities where site_id=site) or exists(select 1 from public.seo_prospects where site_id=site) then raise exception 'Cascade failed'; end if;
 end $$;
 -- Authenticated and anonymous frontend roles must have no direct SEO table access.
-do $
+do $audit$
 declare
  table_name text;
 begin
@@ -46,5 +46,5 @@ begin
    raise exception 'Browser role has direct privileges on %',table_name;
   end if;
  end loop;
-end $;
+end $audit$;
 rollback;
