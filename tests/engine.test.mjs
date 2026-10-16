@@ -9,7 +9,20 @@ const store={
  async schemaReady(){return true;},
  async listSites(t){return t===A?[site]:[];},
  async ownedSite(t,id){return t===A&&id===siteId?site:null;},
- async deleteSite(t,id){return t===A&&id===siteId?[site]:[];},
+ async deleteSite(t,id,domain,actor){
+  return t===A&&id===siteId&&domain===site.domain&&actor==='user'?[{
+   receipt_id:'7d87a2c9-fb84-474a-8ccc-43d6fe476060',
+   deleted_at:'2026-10-16T00:00:00Z',opportunities_removed:2,
+   prospects_removed:1,briefs_removed:1
+  }]:[];
+ },
+ async listDeletionReceipts(t,offset){
+  return {items:t===A?[{
+   id:'7d87a2c9-fb84-474a-8ccc-43d6fe476060',
+   site_id:siteId,deleted_at:'2026-10-16T00:00:00Z',
+   opportunities_removed:2,prospects_removed:1,briefs_removed:1
+  }]:[],hasMore:false};
+ },
  async createSite(t,data){const row={...data,tenant_id:t};records.push(row);return [{...row,id:siteId}];},
  async listOpportunities(){return records.filter(row=>row.keyword);},
  async importOpportunities(t,id,rows){records.push(...rows);return rows;},
@@ -121,6 +134,8 @@ test('site deletion requires independent manager consent, exact domain and tenan
   assert.equal(deleted.code,200);
   assert.equal(deleted.result.deleted,true);
   assert.equal(deleted.result.siteId,siteId);
+  assert.equal(deleted.result.receipt.opportunitiesRemoved,2);
+  assert.equal(deleted.result.receipt.id,'7d87a2c9-fb84-474a-8ccc-43d6fe476060');
  }finally{Date.now=old;}
 });
 
@@ -185,4 +200,26 @@ test('SEO site snapshot is tenant-scoped, bounded and redacts private operationa
   store.listProspects=originalProspects;
   store.listOpportunities=originalOpportunities;
  }
+});
+
+test('deletion receipts are restricted to the managing workspace, without exposing actor identity',async()=>{
+ const old=Date.now;
+ try{
+  Date.now=()=>1001000;
+  const path='/v1/workspace/deletion-receipts';
+  const reader=await dispatch({method:'GET',path,query:{offset:'0'},authorization:jwt(A,['seo:view'])},{store,signingKey:key});
+  assert.equal(reader.code,403);
+  const manager=await dispatch({method:'GET',path,query:{offset:'0'},authorization:jwt(A,['seo:manage'])},{store,signingKey:key});
+  assert.equal(manager.code,200);
+  assert.equal(manager.result.receipts.length,1);
+  assert.equal(manager.result.receipts[0].opportunities_removed,2);
+  assert.equal(JSON.stringify(manager.result).includes('actor_subject'),false);
+  const other=await dispatch({method:'GET',path,query:{offset:'0'},authorization:jwt(B,['seo:manage'])},{store,signingKey:key});
+  assert.equal(other.code,200);
+  assert.deepEqual(other.result.receipts,[]);
+  for(const invalid of ['-1','1.5','1000001','01']){
+   const response=await dispatch({method:'GET',path,query:{offset:invalid},authorization:jwt(A,['seo:manage'])},{store,signingKey:key});
+   assert.equal(response.code,400);
+  }
+ }finally{Date.now=old;}
 });

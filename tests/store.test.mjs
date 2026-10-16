@@ -44,7 +44,7 @@ test('readiness validates every table and DNS verification column without readin
   }
  });
  assert.equal(await store.schemaReady(),true);
- assert.equal(seen.length,4);
+ assert.equal(seen.length,5);
  for(const url of seen)assert.equal(url.searchParams.get('limit'),'0');
  const sites=seen.find(url=>url.pathname.endsWith('/seo_sites'));
  assert.ok(sites);
@@ -52,6 +52,9 @@ test('readiness validates every table and DNS verification column without readin
  const briefs=seen.find(url=>url.pathname.endsWith('/seo_briefs'));
  assert.ok(briefs);
  assert.match(briefs.searchParams.get('select'),/reviewed_at,reviewed_by,review_note/);
+ const deletionTable=seen.find(url=>url.pathname.endsWith('/seo_site_deletion_receipts'));
+ assert.ok(deletionTable);
+ assert.match(deletionTable.searchParams.get('select'),/opportunities_removed,prospects_removed,briefs_removed/);
 });
 test('readiness fails when database does not have DNS verification migration columns',async()=>{
  const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
@@ -60,19 +63,42 @@ test('readiness fails when database does not have DNS verification migration col
  await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===400);
 });
 
-test('site deletion is a tenant-filtered PostgREST DELETE, not a global domain deletion',async()=>{
+test('site deletion uses one atomic service-role RPC with authenticated tenant and actor',async()=>{
  const requests=[];
- const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+ const adapter=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async(url,options)=>{
+   requests.push({url:new URL(url),options});
+   return new Response(JSON.stringify([{receipt_id:SITE,opportunities_removed:2}]),{status:200});
+  }});
+ const receipts=await adapter.deleteSite(A,SITE,'takatak.ca','user');
+ assert.equal(receipts[0].opportunities_removed,2);
+ assert.equal(requests.length,1);
+ assert.equal(requests[0].options.method,'POST');
+ assert.equal(requests[0].url.pathname,'/rest/v1/rpc/seo_delete_site_with_receipt');
+ assert.equal(requests[0].options.headers.Prefer,'return=representation');
+ assert.deepEqual(JSON.parse(requests[0].options.body),{
+  p_tenant_id:A,p_site_id:SITE,p_expected_domain:'takatak.ca',p_actor_subject:'user'
+ });
+});
+
+test('deletion receipt listing is tenant-filtered, column-restricted and paginated',async()=>{
+ const requests=[];
+ const adapter=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
   fetchImpl:async(url,options)=>{
    requests.push({url:new URL(url),options});
    return new Response(JSON.stringify([{id:SITE}]),{status:200});
   }});
- await store.deleteSite(A,SITE);
- assert.equal(requests.length,1);
- assert.equal(requests[0].options.method,'DELETE');
- assert.equal(requests[0].url.searchParams.get('tenant_id'),'eq.'+A);
- assert.equal(requests[0].url.searchParams.get('id'),'eq.'+SITE);
- assert.equal(requests[0].options.headers.Prefer,'return=representation');
+ const results=await adapter.listDeletionReceipts(A,100);
+ assert.equal(results.items.length,1);
+ assert.equal(results.hasMore,false);
+ const q=requests[0].url.searchParams;
+ assert.equal(requests[0].url.pathname,'/rest/v1/seo_site_deletion_receipts');
+ assert.equal(q.get('tenant_id'),'eq.'+A);
+ assert.equal(q.get('offset'),'100');
+ assert.equal(q.get('limit'),'101');
+ assert.equal(q.get('order'),'deleted_at.desc,id.desc');
+ assert.equal(q.get('select').includes('actor_subject'),false);
+ await assert.rejects(()=>adapter.listDeletionReceipts(A,-1),e=>e instanceof DatabaseError&&e.status===400);
 });
 
 test('readiness coalesces concurrent public probes and caches successful results',async()=>{
