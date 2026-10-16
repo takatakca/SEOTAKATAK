@@ -18,9 +18,9 @@ alter table public.seo_briefs
    (status = 'draft' and reviewed_at is null and reviewed_by is null and review_note is null)
    or
    (status in ('approved','rejected') and reviewed_at is not null
-     and length(reviewed_by) between 1 and 128
+     and reviewed_by is not null and length(reviewed_by) between 1 and 128
      and (review_note is null or length(review_note) between 1 and 500)
-     and (status <> 'rejected' or length(review_note) between 10 and 500))
+     and (status <> 'rejected' or (review_note is not null and length(review_note) between 10 and 500)))
  );
 -- The API PATCH filters status=eq.draft, so review decisions are immutable.
 -- No new permissions to anon/authenticated: tenant-filtered server-only service-role access.
