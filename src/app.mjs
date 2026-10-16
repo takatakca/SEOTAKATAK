@@ -7,10 +7,16 @@ const statuses=new Set(['identified','researching','contacted','declined']); // 
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const fail=(code,error,headers)=>({code,result:{ok:false,error},headers});
 const ok=(body={},code=200)=>({code,result:{ok:true,...body}});
-// Explicit allowlist: never expose future schema columns from privileged PostgREST rows.
-const publicSite=site=>Object.fromEntries(
- ['id','domain','niche','market','locale','created_at','verified_at'].map(field=>[field,site[field]??null])
-);
+// Field allowlists prevent service-role PostgREST reads from leaking future DB columns.
+const publicFields=(row,allowed)=>Object.fromEntries(allowed.map(field=>[field,row[field]??null]));
+const publicSite=row=>publicFields(row,
+ ['id','domain','niche','market','locale','created_at','verified_at']);
+const publicOpportunity=row=>publicFields(row,
+ ['id','site_id','keyword','source','clicks','impressions','position','priority','updated_at']);
+const publicProspect=row=>publicFields(row,
+ ['id','site_id','publication','url','relevance','status','created_at','updated_at']);
+const publicBrief=row=>publicFields(row,
+ ['id','site_id','keyword','angle','status','created_at','reviewed_at','review_note']);
 function domain(input){
  if(typeof input!=='string'||input.length>253)return null;
  try{
@@ -181,9 +187,9 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
    }
 
    if(parts.length===4&&method==='GET'){
-    if(parts[3]==='opportunities')return ok({opportunities:await store.listOpportunities(tenantId,siteId)});
-    if(parts[3]==='prospects')return ok({prospects:await store.listProspects(tenantId,siteId)});
-    if(parts[3]==='briefs')return ok({briefs:(await store.listBriefs(tenantId,siteId)).map(({reviewed_by,...brief})=>brief)});
+    if(parts[3]==='opportunities')return ok({opportunities:(await store.listOpportunities(tenantId,siteId)).map(publicOpportunity)});
+    if(parts[3]==='prospects')return ok({prospects:(await store.listProspects(tenantId,siteId)).map(publicProspect)});
+    if(parts[3]==='briefs')return ok({briefs:(await store.listBriefs(tenantId,siteId)).map(publicBrief)});
     if(parts[3]==='export'){
      const [opportunities,prospects,briefs]=await Promise.all([
       store.listOpportunities(tenantId,siteId),
@@ -238,12 +244,12 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
     const publication=asText(json.publication,150),url=targetUrl(json.url),relevance=asText(json.relevance,500);
     if(publication.length<2||!url||relevance.length<10)return fail(400,'invalid_prospect');
     const result=await store.createProspect(tenantId,siteId,{publication,url,relevance,status:'identified'});
-    return ok({prospect:result[0]},201);
+    return ok({prospect:publicProspect(result[0])},201);
    }
    if(parts.length===6&&parts[3]==='prospects'&&ID.test(parts[4])&&parts[5]==='status'&&method==='PATCH'){
     if(!statuses.has(json.status))return fail(400,'invalid_status');
     const result=await store.updateProspect(tenantId,siteId,parts[4],{status:json.status,updated_at:new Date().toISOString()});
-    return result.length?ok({prospect:result[0]}):fail(404,'prospect_not_found');
+    return result.length?ok({prospect:publicProspect(result[0])}):fail(404,'prospect_not_found');
    }
 
    if(parts.length===6&&parts[3]==='briefs'&&ID.test(parts[4])&&parts[5]==='review'&&method==='PATCH'){
@@ -256,14 +262,13 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
       reviewed_by:identity.subject,reviewed_at:new Date().toISOString()
     });
     if(!reviewed.length)return fail(409,'brief_not_draft_or_unavailable');
-    const {reviewed_by,...publicBrief}=reviewed[0];
-    return ok({brief:publicBrief});
+    return ok({brief:publicBrief(reviewed[0])});
    }
    if(parts.length===4&&parts[3]==='briefs'&&method==='POST'){
     const keyword=asText(json.keyword,160),angle=asText(json.angle,500);
     if(keyword.length<2||angle.length<10)return fail(400,'invalid_brief');
     const result=await store.createBrief(tenantId,siteId,{keyword,angle,status:'draft'});
-    return ok({brief:result[0]},201);
+    return ok({brief:publicBrief(result[0])},201);
    }
   }
   return fail(404,'not_found');

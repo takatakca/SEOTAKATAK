@@ -159,6 +159,41 @@ test('editorial brief review requires manager, a draft, and a reason for rejecti
  }finally{Date.now=old;}
 });
 
+test('read, create and review responses never expose future PostgREST private fields',async()=>{
+ const original={listOpportunities:store.listOpportunities,listProspects:store.listProspects,
+  listBriefs:store.listBriefs,createProspect:store.createProspect,updateProspect:store.updateProspect,
+  createBrief:store.createBrief,reviewBrief:store.reviewBrief};
+ const previousNow=Date.now;
+ try{
+  Date.now=()=>1001000;
+  const row={id:siteId,site_id:siteId,tenant_id:A,
+   keyword:'SEO keyword',source:'search_console',clicks:1,impressions:4,position:7,priority:55,
+   publication:'Publisher',url:'https://publisher.example/seo',
+   relevance:'A strong editorial match',status:'draft',angle:'Original primary source research',
+   reviewed_by:'private-reviewer',secret_column:'do-not-expose',
+   verification_token:'not-public'};
+  for(const method of Object.keys(original))store[method]=async()=>[row];
+  const base='/v1/sites/'+siteId;
+  const replies=[
+   await req('GET',base+'/opportunities'),
+   await req('GET',base+'/prospects'),
+   await req('GET',base+'/briefs'),
+   await req('POST',base+'/prospects',{publication:'Publisher',url:'https://publisher.example/seo',
+    relevance:'A strong editorial match'}),
+   await req('PATCH',base+'/prospects/'+siteId+'/status',{status:'contacted'}),
+   await req('POST',base+'/briefs',{keyword:'SEO keyword',angle:'Original primary source research'}),
+   await req('PATCH',base+'/briefs/'+siteId+'/review',{status:'approved'})
+  ];
+  for(const response of replies){
+   assert.ok([200,201].includes(response.code),JSON.stringify(response.result));
+   const value=JSON.stringify(response.result);
+   for(const sensitive of ['do-not-expose','private-reviewer','not-public','secret_column',
+    'reviewed_by','verification_token','tenant_id'])
+    assert.equal(value.includes(sensitive),false,sensitive+' should not appear');
+  }
+ }finally{Object.assign(store,original);Date.now=previousNow;}
+});
+
 test('normal site registry and detail redact tenant and future private schema columns',async()=>{
  const original=store.ownedSite,originalList=store.listSites,now=Date.now;
  try{
