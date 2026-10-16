@@ -97,7 +97,7 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
     select,order:'id.asc',limit:pageSize+1,offset});
    return {items:rows.slice(0,pageSize),hasMore:rows.length>pageSize};
   },
-  async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200});},
+  async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200,select:'id,domain,niche,market,locale,created_at,verified_at'});},
   async createSite(tenantId,data){return request('seo_sites',{method:'POST',body:{...data,tenant_id:tenantId}});},
   async updateSiteVerification(tenantId,id,updates,expectedToken){
    return request('seo_sites',{method:'PATCH',filter:{
@@ -120,12 +120,12 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
    });
    return {items:rows.slice(0,100),hasMore:rows.length>100};
   },
-  async listOpportunities(tenantId,siteId){return request('seo_opportunities',{filter:filter(tenantId,siteId),order:'priority.desc',limit:200});},
+  async listOpportunities(tenantId,siteId){return request('seo_opportunities',{filter:filter(tenantId,siteId),order:'priority.desc',limit:200,select:'id,site_id,keyword,source,clicks,impressions,position,priority,updated_at'});},
   async importOpportunities(tenantId,siteId,rows){return request('seo_opportunities',{method:'POST',body:rows.map(row=>({...row,tenant_id:tenantId,site_id:siteId})),upsert:true});},
-  async listProspects(tenantId,siteId){return request('seo_prospects',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200});},
+  async listProspects(tenantId,siteId){return request('seo_prospects',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200,select:'id,site_id,publication,url,relevance,status,created_at,updated_at'});},
   async createProspect(tenantId,siteId,data){return request('seo_prospects',{method:'POST',body:{...data,tenant_id:tenantId,site_id:siteId}});},
   async updateProspect(tenantId,siteId,id,data){return request('seo_prospects',{method:'PATCH',filter:{...filter(tenantId,siteId),id:eq(id)},body:data});},
-  async listBriefs(tenantId,siteId){return request('seo_briefs',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200});},
+  async listBriefs(tenantId,siteId){return request('seo_briefs',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200,select:'id,site_id,keyword,angle,status,created_at,reviewed_at,review_note'});},
   async createBrief(tenantId,siteId,data){return request('seo_briefs',{method:'POST',body:{...data,tenant_id:tenantId,site_id:siteId}});},
   async reviewBrief(tenantId,siteId,id,updates){
    return request('seo_briefs',{method:'PATCH',filter:{

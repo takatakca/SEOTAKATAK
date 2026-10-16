@@ -202,3 +202,27 @@ test('PostgREST accepts a normal bounded JSON response',async()=>{
  assert.equal(rows.length,1);
  assert.equal(rows[0].domain,'example.ca');
 });
+
+test('normal site and evidence lists select only public data columns at the database boundary',async()=>{
+ const seen=[];
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async url=>{
+   seen.push(new URL(url));
+   return new Response('[]',{status:200});
+  }});
+ await store.listSites(A);
+ await store.listOpportunities(A,SITE);
+ await store.listProspects(A,SITE);
+ await store.listBriefs(A,SITE);
+ assert.equal(seen.length,4);
+ for(const call of seen){
+  assert.equal(call.searchParams.get('tenant_id'),'eq.'+A);
+  const selected=call.searchParams.get('select');
+  assert.ok(selected&&selected!=='*');
+  for(const secret of ['verification_token','verification_issued_at','tenant_id',
+   'reviewed_by','actor_subject','domain_sha256']){
+   assert.equal(selected.split(',').includes(secret),false,
+    'Normal list must not request '+secret);
+  }
+ }
+});
