@@ -166,3 +166,39 @@ test('workspace export applies tenant filter, stable offset and strict safe data
  }
  await assert.rejects(()=>store.exportWorkspacePage(A,'outside',0,200),error=>error instanceof DatabaseError);
 });
+
+test('PostgREST caps untrusted response bytes during streaming, not after reading',async()=>{
+ let reads=0,cancelled=false;
+ const max=1_048_576;
+ const stream=new ReadableStream({
+  pull(controller){
+   reads++;
+   controller.enqueue(new Uint8Array(32768));
+  },
+  cancel(){cancelled=true;}
+ });
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async()=>new Response(stream,{status:200,headers:{'content-type':'application/json'}})});
+ await assert.rejects(()=>store.listSites(A),e=>e instanceof DatabaseError&&e.status===502);
+ assert.ok(reads<=35,'Streaming limit must stop after just over one MiB');
+ assert.equal(cancelled,true,'The upstream oversized stream is cancelled');
+ assert.equal(max,1048576);
+});
+
+test('PostgREST rejects compressed/Unicode-sized payloads by actual transfer bytes',async()=>{
+ // ASCII/UTF-16 string lengths can be smaller than the UTF-8 transport size.
+ const body=JSON.stringify([{title:'🔥'.repeat(300000)}]);
+ assert.ok(body.length<1_048_576);
+ assert.ok(Buffer.byteLength(body,'utf8')>1_048_576);
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async()=>new Response(body,{status:200})});
+ await assert.rejects(()=>store.listSites(A),e=>e instanceof DatabaseError&&e.status===502);
+});
+
+test('PostgREST accepts a normal bounded JSON response',async()=>{
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async()=>new Response(JSON.stringify([{id:SITE,domain:'example.ca'}]),{status:200})});
+ const rows=await store.listSites(A);
+ assert.equal(rows.length,1);
+ assert.equal(rows[0].domain,'example.ca');
+});

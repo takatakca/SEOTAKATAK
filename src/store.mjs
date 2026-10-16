@@ -21,9 +21,29 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
   try{
    const response=await fetchImpl(url,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal,redirect:'error'});
    if(!response.ok)throw new DatabaseError(response.status);
-   if(Number(response.headers.get('content-length')||0)>1048576)throw new DatabaseError(502);
-   const result=await response.text();
-   if(result.length>1048576)throw new DatabaseError(502);
+   // Enforce the response limit *while streaming*, before untrusted PostgREST
+   // bytes can accumulate in process memory. Content-Length is only a hint.
+   const maxResponseBytes=1_048_576;
+   const declared=Number(response.headers.get('content-length'));
+   if(Number.isFinite(declared)&&declared>maxResponseBytes)
+    throw new DatabaseError(502);
+   const chunks=[];let received=0;
+   if(response.body){
+    const reader=response.body.getReader();
+    try{
+     for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      received+=value.byteLength;
+      if(received>maxResponseBytes){
+       await reader.cancel().catch(()=>{});
+       throw new DatabaseError(502);
+      }
+      chunks.push(value);
+     }
+    }finally{reader.releaseLock();}
+   }
+   const result=Buffer.concat(chunks,received).toString('utf8');
    return result?JSON.parse(result):[];
   }catch(e){if(e instanceof DatabaseError)throw e;throw new DatabaseError(503);}finally{clearTimeout(timeout);}
  }
