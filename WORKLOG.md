@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · 6308c81f → CI 38841219269 PASS | Built real HTTP server regression checks and tenant-scoped permanent deletion of SEO sites with dual confirmation and SQL cascade; secured DELETE JSON parsing; V1 PR #182 UI pending CI | Owner Coolify/database gate remains blocked; coordinator reviews V1 PR; smoke deletion on approved test workspace
+
+
 2026-10-15 | GitHub agent | main · dab67f2b (CI pending) | Rechecked V1 PR #182 full CI PASS at 27b54652; hardened 64 KiB JSON request limit against UTF-8 multibyte bypass | Verify latest backend CI; Coolify and approved DB still blocked in issue #1
 
 2026-10-15 | GitHub agent | main · c1d7861f → CI 38799814574 PASS | Added process-local per-tenant read/write/import quotas with HTTP 429, tightened /ready to validate all SEO tables and verification schema; deployment still blocked by absent Coolify configuration | Approved migrations 0001+0002, real DB/Coolify release, then two-tenant smoke; integrate V1 PR #182

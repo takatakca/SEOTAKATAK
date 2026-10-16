@@ -34,3 +34,7 @@ For a domain you control, register it under the authorized TAKATAK client worksp
 ### New readiness and quota acceptance
 
 The SEO application's `/ready` now requires both migrations 0001 and 0002 and all four data tables. Apply these only after documented owner/DB-coordinator approval. Before enabling public traffic, verify a missing column produces HTTP 503, while the fully migrated database produces HTTP 200 with `{ok:true,status:"ready",database:"reachable",schema:"verified"}`. Confirm real client A and client B remain isolated and repeated authenticated requests return HTTP 429 with Retry-After; configure shared edge limits separately for multi-instance deployments.
+
+### Controlled deletion smoke on an approved staging workspace
+
+After migration approval and a **live** SEO service deploy, create a disposable domain/site under staging tenant A and add a draft, a prospect and a query import. First confirm a viewer's `DELETE` returns 403, another tenant's manager gets 404, and a wrong domain or unchecked acknowledgment returns 400. With the correct typed hostname and independent acknowledgment, verify a manager's `DELETE` returns `{ok:true,deleted:true}`; subsequent reads show no site and no child SEO records. Confirm that the central TAKATAK client account still exists. Do not perform this destructive smoke on a customer's production website.

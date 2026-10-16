@@ -23,6 +23,7 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 - GET /v1/sites
 - POST /v1/sites {domain,niche,market,locale}
 - GET /v1/sites/:siteId
+- DELETE /v1/sites/:siteId {confirmDomain:"exact.example",confirmDelete:true} — irreversible tenant-scoped deletion of the SEO site; on database approval, foreign-key ON DELETE CASCADE also removes its keywords, prospects and briefs; TAKATAK master identity is unchanged
 - GET /v1/sites/:siteId/verification (seo:manage only; DNS challenge details)
 - POST /v1/sites/:siteId/verification/start (issues/rotates DNS TXT challenge)
 - POST /v1/sites/:siteId/verification/check (verifies live DNS, conditionally persists proof)

@@ -44,3 +44,10 @@ Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks C
 ### HTTP request-size hardening (2026-10-15)
 
 `src/server.mjs` now measures JSON upload size using raw bytes, preventing multibyte UTF-8 content from exceeding the 64 KiB cap undetected. Latest CI after this change is pending; earlier backend CI `38800026740` was green. TAKATAK V1 PR #182 CI `38800217288` passed, but PR remains open and neither production deployment is verified.
+
+### Data lifecycle / client-owned site removal (2026-10-15)
+
+- Server accepts a JSON DELETE for `/v1/sites/{id}` only with a signed `seo:manage` token, matching tenant ownership, `confirmDelete:true` and the exact registered domain in `confirmDomain`.
+- `seo_sites` is removed through a tenant-filtered PostgREST DELETE. Migration 0001 already defines foreign-key `ON DELETE CASCADE` for opportunity, backlink prospect and content-brief records. This never deletes the TAKATAK identity/client workspace.
+- Backend API and actual Node HTTP regression tests passed CI at `6308c81fd97156dab620690bd5fbb629875299c0`, run `38841219269`. Production remains not verified (Coolify GitHub environment missing `COOLIFY_API_URL`).
+- TAKATAK V1 PR #182 adds destructive-action UI with required typed domain + acknowledgment. Its CI must be checked before coordinator review. This feature does not implement full GDPR erasure of other TAKATAK product records.

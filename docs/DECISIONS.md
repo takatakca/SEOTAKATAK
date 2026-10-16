@@ -20,3 +20,7 @@ A registered site is **unverified** by default. Only an authorized TAKATAK V1 in
 ## API abuse prevention and readiness
 
 Use a small, deterministic, process-local authenticated rate gate with independent read, write and trusted-Google-import budgets. It is testable without network dependencies and fails with HTTP 429 + Retry-After. It is **not** a substitute for global edge or distributed quotas once replicas are deployed. `GET /ready` checks the full required PostgREST schema, including DNS ownership migration 0002, with `limit=0` so it never reads customer records. An incomplete migration returns HTTP 503 and blocks the CI-gated Coolify release instead of appearing healthy.
+
+## Controlled SEO-site erasure and retention boundary (2026-10-15)
+
+An authorized manager may irreversibly remove a single SEO site by submitting `DELETE /v1/sites/{id}` with both `confirmDelete:true` and `confirmDomain` equal to the site's stored hostname. The server derives tenant from a signed TAKATAK token, loads the site under that tenant, and performs an identically scoped SQL DELETE. Existing `ON DELETE CASCADE` references remove SEO opportunity, prospect and editorial-brief rows; TAKATAK V1 retains all master accounts and membership. The browser's typed confirmation is a UX safeguard, never a substitute for server-side role/tenant enforcement. A separate retention and evidence-erasure policy still requires owner approval; do not claim one-site deletion covers the entire ecosystem.
