@@ -7,6 +7,7 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Add bounded, honest SEO summary and safe CSV export.
 - [x] Add per-process, per-tenant/request-type API quotas and Retry-After responses; tests pass.
 - [x] Strengthen /ready to validate four tables and migration 0002 verification columns without leaking data.
+- [x] Correct JSON request-size guard to count raw bytes, including multibyte input.
 - [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.
 - [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.

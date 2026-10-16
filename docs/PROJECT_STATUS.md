@@ -40,3 +40,7 @@ Commit `bde41fb7` has green CI run `38794560027`. The deployment script checks C
 - Per-tenant-and-signer quotas enforced in-process (120 reads / 30 writes / 8 imports per minute, with 429 and Retry-After). This is **not** a shared multi-instance limiter.
 - Readiness checks the exact columns of sites/verification, opportunities, prospects and briefs via PostgREST without returning customer data. A missing DNS verification migration now prevents production from reporting ready.
 - Code CI passed at `c1d7861f`, run `38799814574`; following deployment job `38799844905` failed. **No successful live deployment has been demonstrated.**
+
+### HTTP request-size hardening (2026-10-15)
+
+`src/server.mjs` now measures JSON upload size using raw bytes, preventing multibyte UTF-8 content from exceeding the 64 KiB cap undetected. Latest CI after this change is pending; earlier backend CI `38800026740` was green. TAKATAK V1 PR #182 CI `38800217288` passed, but PR remains open and neither production deployment is verified.

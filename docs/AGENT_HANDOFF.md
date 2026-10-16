@@ -62,3 +62,12 @@
 - **V1 integration**: PR #182 includes DNS ownership challenge UI and a real content-brief draft form; latest full V1 CI must be verified and merger is coordinator-only.
 - **Access blocker**: Owner-approved non-billable existing DB, migration approval, Coolify application/HTTPS/UUID/token and V1 runtime secrets; see SEOTAKATAK issue #1. No secrets are in the repository.
 - **Exact next action**: check the newest V1 PR CI logs and fix failing tests; get coordinator approval for PR #182. Separately obtain infra admin settings from issue #1, apply approved SQL 0001+0002, validate the endpoint /ready and two-client DNS/SEO smoke, then verify deployed SHA. No external coding orchestrator was configured.
+
+## 2026-10-15 resumed security checkpoint
+
+- **Last completed change:** request JSON body parser now counts incoming Buffer bytes, rather than JavaScript string characters, before enforcing 64 KiB limit. Files: `src/server.mjs`; commits `5f2af2c9`, `dab67f2b` on `main`.
+- **Latest checked prior green CI:** backend SHA `78693972f24c0075c1df730ff26b699722e5d31a`, CI `38800026740` succeeded; associated Coolify deploy `38800109915` failed. New CI on `dab67f2b` was queued at this checkpoint; verify its final result before promotion.
+- **V1 integration:** PR #182 head `27b5465280a840cee33b5998f9bb5dc7fdd1c5e8` passed full CI run `38800217288`, still open, coordinator-only merge/deploy.
+- **Checks:** inspected GitHub source, latest branches, CI runs and deployment script; GitHub Actions will execute `npm run check`, Docker build and shell checks on the new code. No live database, secrets or production release accessed.
+- **Blockers:** owner-approved DB/migrations 0001+0002, Coolify environment/token/UUID/HTTPS and V1 coordinator. Issue #1 tracks infrastructure. No external restart orchestrator configured.
+- **Exact next action:** check latest backend CI; if green, proceed with independent work on shared quota/audit retention or backlink verification; obtain approved infrastructure and perform live /ready, two-tenant and deployed SHA checks before declaring production.

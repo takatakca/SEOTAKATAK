@@ -1,5 +1,7 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | GitHub agent | main · dab67f2b (CI pending) | Rechecked V1 PR #182 full CI PASS at 27b54652; hardened 64 KiB JSON request limit against UTF-8 multibyte bypass | Verify latest backend CI; Coolify and approved DB still blocked in issue #1
+
 2026-10-15 | GitHub agent | main · c1d7861f → CI 38799814574 PASS | Added process-local per-tenant read/write/import quotas with HTTP 429, tightened /ready to validate all SEO tables and verification schema; deployment still blocked by absent Coolify configuration | Approved migrations 0001+0002, real DB/Coolify release, then two-tenant smoke; integrate V1 PR #182
 
 2026-10-15 | GitHub agent | main · 4bcdc57c → CI 38798985084 PASS | DNS ownership verification with 7-day TXT challenge, tenant scopes, rotated-token guard, secret redaction; migration 0002 pending approval | Continue V1 PR #182 CI and ownership UI; production remains blocked by Coolify and DB setup
