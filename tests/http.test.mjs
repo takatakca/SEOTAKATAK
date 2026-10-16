@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
+import {issueToken} from '../src/auth.mjs';
 import {createServer} from 'node:net';
 import {setTimeout as delay} from 'node:timers/promises';
 
@@ -46,6 +47,17 @@ test('real HTTP server rejects bad, multibyte and oversized JSON without leaking
   assert.equal(alive.headers.get('cache-control'),'no-store');
   assert.equal(alive.headers.get('x-content-type-options'),'nosniff');
 
+  // The live HTTP listener must forward URL pagination parameters to the
+  // signed API instead of treating a workspace export as an unvalidated path.
+  const token='Bearer '+issueToken({
+   tenantId:'7d87a2c9-fb84-474a-8ccc-43d6fe47605c',
+   subject:'http-test',permissions:['seo:view']
+  },'a'.repeat(64));
+  const invalidExport=await request(root,'/v1/workspace/export?collection=wrong&offset=0',{
+   headers:{authorization:token}
+  });
+  assert.equal(invalidExport.status,400);
+  assert.equal(invalidExport.body.error,'invalid_export_page');
   const noAuth=await request(root,'/v1/sites');
   assert.equal(noAuth.status,401);
   const invalid=await request(root,'/v1/sites',{method:'POST',headers:{'content-type':'application/json'},body:'{"oops"'});
