@@ -1,11 +1,12 @@
 // PostgREST server-side adapter. No service key is ever exposed to a browser.
 export class DatabaseError extends Error{constructor(status){super('SEO datastore unavailable');this.status=status;}}
-const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_briefs']);
+const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts']);
+const RPC_DELETE='rpc/seo_delete_site_with_receipt';
 export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  if(!baseUrl||!serviceKey||!/^https:\/\//.test(baseUrl))throw new Error('Server-side Supabase configuration required');
  const root=new URL('/rest/v1/',baseUrl);
  async function request(table,{method='GET',filter={},body,order,limit,offset,select='*',upsert=false}={}){
-  if(!TABLES.has(table))throw new Error('Unknown table');
+  if(!TABLES.has(table)&&table!==RPC_DELETE)throw new Error('Unknown table');
   const url=new URL(table,root);
   for(const [key,value] of Object.entries(filter))url.searchParams.set(key,value);
   if(order)url.searchParams.set('order',order);
@@ -45,6 +46,10 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
       request('seo_opportunities',{select:'id,tenant_id,site_id,keyword',limit:0}),
       request('seo_prospects',{select:'id,tenant_id,site_id,status',limit:0}),
       request('seo_briefs',{select:'id,tenant_id,site_id,status,reviewed_at,reviewed_by,review_note',limit:0}),
+      request('seo_site_deletion_receipts',{
+       select:'id,tenant_id,site_id,deleted_at,opportunities_removed,prospects_removed,briefs_removed',
+       limit:0
+      }),
      ]);
      readinessResult=true;
      readinessUntil=Date.now()+10_000;
@@ -80,7 +85,21 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
    },body:updates});
   },
   async ownedSite(tenantId,id){const rows=await request('seo_sites',{filter:{tenant_id:eq(tenantId),id:eq(id)},limit:1});return rows[0]||null;},
-  async deleteSite(tenantId,id){return request('seo_sites',{method:'DELETE',filter:{tenant_id:eq(tenantId),id:eq(id)}});},
+  async deleteSite(tenantId,id,expectedDomain,actor){
+   return request(RPC_DELETE,{method:'POST',body:{
+    p_tenant_id:tenantId,p_site_id:id,p_expected_domain:expectedDomain,
+    p_actor_subject:actor
+   }});
+  },
+  async listDeletionReceipts(tenantId,offset){
+   if(!Number.isSafeInteger(offset)||offset<0||offset>1_000_000)throw new DatabaseError(400);
+   const rows=await request('seo_site_deletion_receipts',{
+    filter:{tenant_id:eq(tenantId)},order:'deleted_at.desc,id.desc',
+    select:'id,site_id,deleted_at,opportunities_removed,prospects_removed,briefs_removed',
+    limit:101,offset
+   });
+   return {items:rows.slice(0,100),hasMore:rows.length>100};
+  },
   async listOpportunities(tenantId,siteId){return request('seo_opportunities',{filter:filter(tenantId,siteId),order:'priority.desc',limit:200});},
   async importOpportunities(tenantId,siteId,rows){return request('seo_opportunities',{method:'POST',body:rows.map(row=>({...row,tenant_id:tenantId,site_id:siteId})),upsert:true});},
   async listProspects(tenantId,siteId){return request('seo_prospects',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200});},

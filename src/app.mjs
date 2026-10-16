@@ -85,6 +85,17 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{
   if(parts.length===3&&parts[0]==='v1'&&parts[1]==='workspace'&&
+     parts[2]==='deletion-receipts'&&method==='GET'){
+   if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
+   const offsetText=query?.offset??'0';
+   if(typeof offsetText!=='string'||!/^(0|[1-9][0-9]{0,6})$/.test(offsetText)||
+      Number(offsetText)>1_000_000)return fail(400,'invalid_receipt_page');
+   const offset=Number(offsetText);
+   const result=await store.listDeletionReceipts(tenantId,offset);
+   return ok({receipts:result.items,offset,limit:100,hasMore:result.hasMore,
+    nextOffset:result.hasMore?offset+result.items.length:null});
+  }
+  if(parts.length===3&&parts[0]==='v1'&&parts[1]==='workspace'&&
      parts[2]==='export'&&method==='GET'){
    const collection=query?.collection;
    const offsetValue=query?.offset??'0';
@@ -121,8 +132,16 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
     // Intentional cascading deletion: require both a literal domain and a separate approval flag.
     if(json.confirmDelete!==true||typeof json.confirmDomain!=='string'||
        json.confirmDomain.trim().toLowerCase()!==site.domain)return fail(400,'site_deletion_confirmation_required');
-    const removed=await store.deleteSite(tenantId,siteId);
-    return removed.length?ok({deleted:true,siteId}):fail(409,'site_deletion_conflict');
+    const removed=await store.deleteSite(tenantId,siteId,site.domain,identity.subject);
+    if(!removed.length)return fail(409,'site_deletion_conflict');
+    const receipt=removed[0];
+    return ok({deleted:true,siteId,
+      receipt:receipt.receipt_id?{
+       id:receipt.receipt_id,deletedAt:receipt.deleted_at,
+       opportunitiesRemoved:receipt.opportunities_removed,
+       prospectsRemoved:receipt.prospects_removed,
+       briefsRemoved:receipt.briefs_removed
+      }:null});
    }
    // Domain verification is an independent evidence gate; registration alone is not ownership.
    if(parts.length===4&&parts[3]==='verification'&&method==='GET'){

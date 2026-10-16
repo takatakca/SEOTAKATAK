@@ -26,7 +26,27 @@ begin
   raise exception 'Cross-tenant insertion must fail';
  exception when foreign_key_violation then null;
  end;
- delete from public.seo_sites where tenant_id=tenant and id=site;
+ -- Invalid tenant/domain cannot create a deletion receipt.
+ if exists(select 1 from public.seo_delete_site_with_receipt(
+  '8d87a2c9-fb84-474a-8ccc-43d6fe47605d',site,'ci-example.test','tester'
+ )) then raise exception 'Wrong tenant allowed deletion'; end if;
+ if exists(select 1 from public.seo_delete_site_with_receipt(
+  tenant,site,'incorrect.example','tester'
+ )) then raise exception 'Wrong domain allowed deletion'; end if;
+ if exists(select 1 from public.seo_site_deletion_receipts where site_id=site) then
+  raise exception 'Invalid deletion emitted receipt';
+ end if;
+ if not exists(select 1 from public.seo_delete_site_with_receipt(
+  tenant,site,'ci-example.test','tester'
+ )) then raise exception 'Correct owned deletion must produce receipt'; end if;
+ if not exists(select 1 from public.seo_site_deletion_receipts
+  where tenant_id=tenant and site_id=site and opportunities_removed=1
+   and prospects_removed=1 and briefs_removed=1 and actor_subject='tester') then
+  raise exception 'Deletion receipt missing or child counts incorrect';
+ end if;
+ if exists(select 1 from public.seo_delete_site_with_receipt(
+  tenant,site,'ci-example.test','tester'
+ )) then raise exception 'Repeated deletion must not create another receipt'; end if;
  if exists(select 1 from public.seo_briefs where site_id=site) or exists(select 1 from public.seo_opportunities where site_id=site) or exists(select 1 from public.seo_prospects where site_id=site) then raise exception 'Cascade failed'; end if;
 end $$;
 -- Authenticated and anonymous frontend roles must have no direct SEO table access.
@@ -34,7 +54,7 @@ do $audit$
 declare
  table_name text;
 begin
- foreach table_name in array array['seo_sites','seo_opportunities','seo_prospects','seo_briefs'] loop
+ foreach table_name in array array['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts'] loop
   if not exists (
    select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
    where n.nspname='public' and c.relname=table_name and c.relrowsecurity
@@ -46,5 +66,12 @@ begin
    raise exception 'Browser role has direct privileges on %',table_name;
   end if;
  end loop;
+ if has_function_privilege('anon','public.seo_delete_site_with_receipt(uuid,uuid,text,text)','EXECUTE') or
+    has_function_privilege('authenticated','public.seo_delete_site_with_receipt(uuid,uuid,text,text)','EXECUTE') then
+  raise exception 'Client can call privileged deletion RPC';
+ end if;
+ if not has_function_privilege('service_role','public.seo_delete_site_with_receipt(uuid,uuid,text,text)','EXECUTE') then
+  raise exception 'Service role cannot use deletion RPC';
+ end if;
 end $audit$;
 rollback;
