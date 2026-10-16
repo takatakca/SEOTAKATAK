@@ -10,6 +10,7 @@
 - Editorial backlink prospect management (identified, researching, contacted, declined; earned is reserved for future independently verified links)
 - Original content brief queue requiring human editorial review
 - 60-second signed JWT API authentication and read/manage scopes; tenant and site ownership enforced for every operation
+- Per-process burst controls **plus** shared PostgreSQL 60-second quotas (120 reads/30 writes/8 imports per signed profile and tenant), with Retry-After; requires approved migration 0005
 - PostgreSQL schema, PostgREST service integration, Docker image and Node 22 tests
 
 **Not implemented or verified yet:** Live Google OAuth ingest, verified backlink crawling, AI answer citation measurement, automated publication, email campaigns, live production database or Coolify deployment. No traffic or search ranking outcome is guaranteed.
@@ -78,3 +79,7 @@ Each HTTP response includes a server-generated `X-Request-ID` UUID. The Node lis
 ## PostgREST memory and privacy boundary (2026-10-16)
 
 The server-side data adapter enforces the maximum size of a PostgREST response **during stream consumption**, before buffering it in memory: 1,048,576 UTF-8 bytes per response. Larger payloads cancel the upstream stream and return a safe API unavailable status without exposing service-role secrets. JSON returned under this bound is still parsed and validated by the existing API. Normal site, opportunity, prospect and brief lists query only their explicit public columns at the PostgREST `select` layer, never `*`; privileged operations such as DNS ownership checks still retrieve the additional private fields they legitimately need. This limit protects the application process; it does not create additional records or guarantee full export coverage.
+
+## Multi-instance request quotas (reviewed migration 0005 required)
+
+Migration `sql/0005_shared_rate_limits.sql` adds `seo_api_rate_buckets` and privileged SECURITY INVOKER `seo_consume_api_quota` with atomic `INSERT ... ON CONFLICT DO UPDATE` counters. The subject is hashed before storage, with separate tenant and read/write/import buckets. The database clock controls the 60-second windows across multiple Node instances. Locally rejected bursts avoid a database call; requests otherwise must also pass this shared quota. A limit hit returns HTTP 429 with Retry-After; an unavailable quota datastore yields a safe HTTP 503 rather than silently allowing access. PostgreSQL integration tests prove 8 allowed/12 denied when 20 import requests run concurrently. Only server-side `service_role` can execute the RPC; anon/authenticated are denied. Counters are operational, **not** an approved customer billing or legal retention policy. No actual Supabase database has been migrated yet.

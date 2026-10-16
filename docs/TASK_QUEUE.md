@@ -14,7 +14,8 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Add atomic operational SEO-site deletion receipts (SQL 0004) with tenant-scoped manager-only receipt listing and V1 UI PR; do not claim legal compliance.
 - [ ] Add owner-approved retention/subject-access policy, backup-erasure lifecycle and independently verifiable regulatory receipts across TAKATAK products; operational SEO receipts are not a certified system-wide erasure.
 - [x] Prevent public /ready request amplification with bounded per-store success/failure probe caching and concurrent-call coalescing.
-- [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
+- [x] Add atomic PostgreSQL shared cross-instance quota for signed tenant/profile read/write/import, with concurrent CI and restricted RPC grants (SQL 0005).
+- [ ] Add separate approved edge-level controls, owner-approved operational counter retention/purge policy, and real multi-replica load smoke.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.
 - [x] Add real PostgreSQL 16 CI migration execution with 0001→0002→0003, FK/review/cascade assertions, RLS enabled, and anon/authenticated privilege-denial checks.
 - [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.
@@ -42,3 +43,5 @@ Order by security and operational dependencies. Do not duplicate completed work.
 Run locally: `npm run check` (Node 22), `docker build -t seotakatak:ci .` and `bash -n scripts/deploy-coolify.sh`.
 
 - [ ] Database owner reviews and approves `sql/0004_site_deletion_receipts.sql` after 0001→0003, including restricted service-role RPC grants and protected receipt retention.
+
+- [ ] DB owner approves and applies `sql/0005_shared_rate_limits.sql` after 0001–0004, verifies RPC roles and real 429/Retry-After behavior across running Coolify replicas.
