@@ -29,4 +29,22 @@ begin
  delete from public.seo_sites where tenant_id=tenant and id=site;
  if exists(select 1 from public.seo_briefs where site_id=site) or exists(select 1 from public.seo_opportunities where site_id=site) or exists(select 1 from public.seo_prospects where site_id=site) then raise exception 'Cascade failed'; end if;
 end $$;
+-- Authenticated and anonymous frontend roles must have no direct SEO table access.
+do $
+declare
+ table_name text;
+begin
+ foreach table_name in array array['seo_sites','seo_opportunities','seo_prospects','seo_briefs'] loop
+  if not exists (
+   select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   where n.nspname='public' and c.relname=table_name and c.relrowsecurity
+  ) then raise exception 'RLS disabled on %',table_name; end if;
+  if has_table_privilege('anon','public.'||table_name,'SELECT') or
+     has_table_privilege('anon','public.'||table_name,'INSERT') or
+     has_table_privilege('authenticated','public.'||table_name,'SELECT') or
+     has_table_privilege('authenticated','public.'||table_name,'UPDATE') then
+   raise exception 'Browser role has direct privileges on %',table_name;
+  end if;
+ end loop;
+end $;
 rollback;
