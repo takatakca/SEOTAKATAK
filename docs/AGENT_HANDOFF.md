@@ -1,3 +1,13 @@
+## CURRENT 2026-10-16 — PostgREST streaming cap, minimize DB SELECT columns
+
+- **Last code done:** `src/store.mjs` now streams PostgREST JSON responses with a hard 1,048,576-byte decoded body limit, cancels oversized streams and never buffers the full untrusted payload. Unicode/multibyte regression and normal-response tests added to `tests/store.test.mjs`. Ordinary site/opportunity/prospect/brief list queries now SELECT only the safe public columns rather than `*`; existing tenant-scoped filters preserved. No V1 UI or SQL migration changed in this continuation.
+- **Verified first fix SHA:** `c402191f6c862c091af77a165986789a979a680f`, full backend GitHub Actions **CI PASSED** run `38941677513` (Node tests, disposable PostgreSQL 16 migrations 0001–0004, Docker). Associated production Coolify job `38941739474` **FAILED**. The prior known error remains missing GitHub environment variable `COOLIFY_API_URL` (verify newest logs before asserting a specific cause).
+- **Second fix SHA:** `d745f3ab938b6dfdfcfc89e4c54f3e2a3c011adb`, CI `38941994514` queued/pending at first handoff check. The following docs commit moves main: inspect HEAD and latest run before continuing.
+- **V1 status confirmed:** PR #182 merged by coordinator. PR **#196** is open/unmerged, **ready for review**, head `179b61d43b44f2c6820f3cd67aa173f84ccfc03a`, latest full CI `38885867932` **PASSED**. Do not merge or deploy this PR outside V1 coordinator authority.
+- **Current task:** check the latest SEOTAKATAK CI run for list SELECT-column hardening, repair any regression, and verify the GitHub production deployment logs. No production SQL, secrets or account DB were changed.
+- **Required environment, not available:** approved existing/non-billable PostgreSQL with migrations `sql/0001`→`sql/0004`; proper Coolify HTTPS application, UUID, token, health origin and configured GitHub production variables; matching trusted V1 JWT key; V1 coordinator release. GitHub issue #1 tracks infrastructure. No external self-relaunch agent orchestrator installed.
+- **Exact next action:** inspect newest backend full CI / deploy result; if green, continue next independent issue without bypassing release security. Once infrastructure owner approves and configures, deploy only reviewed SHA then verify live `/ready`, exact running SHA, signed clients A/B, real GSC/domain DNS and disposable deletion/audit receipts. Update this checkpoint before stopping.
+
 # SEOTAKATAK — agent handoff (2026-10-15)
 
 ## Current GitHub and last completed task

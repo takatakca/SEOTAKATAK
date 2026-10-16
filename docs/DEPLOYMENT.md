@@ -70,3 +70,7 @@ After the DB owner approves and applies 0001→0002→0003, review/backup then a
 ### Operational diagnostics acceptance (after approved Coolify rollout)
 
 Request `GET /health`, `GET /ready` and a signed tenant API operation; each should emit a distinct `X-Request-ID` UUID. Inspect Coolify logs to ensure there are corresponding `http_request` JSON records containing only `routeGroup`, `method`, `status`, `durationMs` and the request ID. No JWT, raw URL/Google query, customer identifier, request body or IP address should be logged. Unexpected handler failures should result in 503 `service_unavailable` without stack traces in client responses. Tests validate the logger in CI, but central monitoring and alert routing require separate approved infrastructure. Existing SEO production deployment is still **not verified**.
+
+### PostgREST memory guard acceptance
+
+CI regression tests now prove oversized UTF-8 JSON responses and endless upstream streams are stopped/cancelled after a hard 1 MiB boundary, with normal bounded JSON responses unaffected. In approved staging, monitor container memory and error response when the database/API returns an unexpectedly large collection; prefer paginated routes for complete exports, as ordinary collection reads remain capped at 200 rows. Normal site/opportunity/prospect/brief reads request only public SELECT fields; DNS verification uses privileged site-specific fields separately. These tests are not proof of a running SEO production deployment.

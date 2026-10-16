@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-16 | ChatGPT/GitHub agent | main · c402191f (CI 38941677513 PASS), d745f3ab (CI 38941994514 pending) | done / waiting CI | Bounded PostgREST streaming responses before allocation, reject oversized UTF-8 inputs, request only public SELECT columns on ordinary client reads; preserve existing JWT/tenant scope | Check second CI then owner configures Coolify/DB, V1 coordinator reviews PR #196
+
+
 2026-10-16 | ChatGPT/GitHub agent | main · 216b205b → CI 38885007096 PASS | Explicit privacy field serializers for read/write SEO API; request UUIDs, privacy-minimized JSON operational logs, fail-closed dispatch exceptions; tests pass on Node, SQL 0001–0004 and Docker | PR #196 coordinator review, approved Supabase/Coolify and real staging isolation pending
 
 

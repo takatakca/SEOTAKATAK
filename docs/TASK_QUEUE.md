@@ -19,8 +19,11 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Add real PostgreSQL 16 CI migration execution with 0001→0002→0003, FK/review/cascade assertions, RLS enabled, and anon/authenticated privilege-denial checks.
 - [ ] Owner approves/applies `sql/0002_domain_verification.sql` after `0001` in the authorized project, and live-verifies TXT challenge through V1.
 - [x] Confirm backend code CI run 38793391043 passed; fixed initial regression test expectations.
+- [x] Harden PostgREST reads with a streaming 1 MiB UTF-8 byte cap and cancel oversized responses before memory accumulation.
+- [x] Minimize normal SEO site/evidence SELECT columns so private database fields are never fetched for listing.
+- [x] Confirm TAKATAK V1 PR #196 full CI: SHA 179b61d4 passed run 38885867932, PR ready for coordinator review.
 - [x] Confirm TAKATAK V1 PR #182 full CI: SHA ad8a2ffb succeeded (38844695036), PR merged 2026-10-16.
-- [ ] Confirm latest V1 PR #196 deletion-receipts full CI; designated V1 coordinator reviews/merges only.
+- [x] Confirm latest V1 PR #196 deletion-receipts full CI; designated V1 coordinator must still review/merge.
 - [x] TAKATAK V1 PR #182 merged by its coordinator on 2026-10-16; SEO-specific live integration remains unverified.
 - [ ] Coordinator reviews/merges new TAKATAK V1 PR #196 only after full CI; coordinator alone handles V1 production release.
 - [ ] Owner approves a **non-billable / already-owned** Supabase project and schema migration. Verify DB roles/grants, tenant FKs, RLS, real PostgREST reads/writes, and negative tests.
