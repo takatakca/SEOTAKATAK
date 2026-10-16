@@ -86,8 +86,16 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
  // Bounded per-process limits. Imported evidence has its own stricter quota.
  const bucket=importRoute?'import':method==='GET'?'read':'write';
  const quota=bucket==='import'?8:bucket==='write'?30:120;
- const allowance=rateGate.take(tenantId+':'+identity.subject+':'+bucket,quota,60_000);
- if(!allowance.allowed)return fail(429,'rate_limited',{'Retry-After':String(allowance.retryAfter)});
+ // Local gate prevents unnecessary database traffic during bursts. The
+ // atomic shared PostgreSQL gate enforces the same limits across replicas.
+ const local=rateGate.take(tenantId+':'+identity.subject+':'+bucket,quota,60_000);
+ if(!local.allowed)return fail(429,'rate_limited',{'Retry-After':String(local.retryAfter)});
+ if(typeof store?.consumeQuota==='function'){
+  try{
+   const shared=await store.consumeQuota(tenantId,identity.subject,bucket);
+   if(!shared.allowed)return fail(429,'rate_limited',{'Retry-After':String(shared.retryAfter)});
+  }catch{return fail(503,'rate_limit_unavailable');}
+ }
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{
   if(parts.length===3&&parts[0]==='v1'&&parts[1]==='workspace'&&

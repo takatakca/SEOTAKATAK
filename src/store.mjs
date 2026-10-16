@@ -1,12 +1,13 @@
 // PostgREST server-side adapter. No service key is ever exposed to a browser.
 export class DatabaseError extends Error{constructor(status){super('SEO datastore unavailable');this.status=status;}}
-const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts']);
+const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts','seo_api_rate_buckets']);
 const RPC_DELETE='rpc/seo_delete_site_with_receipt';
+const RPC_QUOTA='rpc/seo_consume_api_quota';
 export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  if(!baseUrl||!serviceKey||!/^https:\/\//.test(baseUrl))throw new Error('Server-side Supabase configuration required');
  const root=new URL('/rest/v1/',baseUrl);
  async function request(table,{method='GET',filter={},body,order,limit,offset,select='*',upsert=false}={}){
-  if(!TABLES.has(table)&&table!==RPC_DELETE)throw new Error('Unknown table');
+  if(!TABLES.has(table)&&table!==RPC_DELETE&&table!==RPC_QUOTA)throw new Error('Unknown table');
   const url=new URL(table,root);
   for(const [key,value] of Object.entries(filter))url.searchParams.set(key,value);
   if(order)url.searchParams.set('order',order);
@@ -70,6 +71,7 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
        select:'id,tenant_id,site_id,deleted_at,opportunities_removed,prospects_removed,briefs_removed',
        limit:0
       }),
+      request('seo_api_rate_buckets',{select:'tenant_id,subject_hash,bucket,window_started,used_count',limit:0}),
      ]);
      readinessResult=true;
      readinessUntil=Date.now()+10_000;
@@ -81,6 +83,15 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
     }finally{readinessPending=null;}
    })();
    return readinessPending;
+  },
+  async consumeQuota(tenantId,subject,bucket){
+   const rows=await request(RPC_QUOTA,{method:'POST',body:{
+    p_tenant_id:tenantId,p_subject:subject,p_bucket:bucket
+   }});
+   const row=rows[0];
+   if(!row||typeof row.allowed!=='boolean'||!Number.isInteger(row.retry_after)||
+     row.retry_after<0||row.retry_after>60)throw new DatabaseError(503);
+   return {allowed:row.allowed,retryAfter:row.retry_after};
   },
   async exportWorkspacePage(tenantId,collection,offset,pageSize=200){
    const allowed={

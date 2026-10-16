@@ -44,7 +44,7 @@ test('readiness validates every table and DNS verification column without readin
   }
  });
  assert.equal(await store.schemaReady(),true);
- assert.equal(seen.length,5);
+ assert.equal(seen.length,6);
  for(const url of seen)assert.equal(url.searchParams.get('limit'),'0');
  const sites=seen.find(url=>url.pathname.endsWith('/seo_sites'));
  assert.ok(sites);
@@ -55,6 +55,9 @@ test('readiness validates every table and DNS verification column without readin
  const deletionTable=seen.find(url=>url.pathname.endsWith('/seo_site_deletion_receipts'));
  assert.ok(deletionTable);
  assert.match(deletionTable.searchParams.get('select'),/opportunities_removed,prospects_removed,briefs_removed/);
+ const quotaTable=seen.find(url=>url.pathname.endsWith('/seo_api_rate_buckets'));
+ assert.ok(quotaTable);
+ assert.match(quotaTable.searchParams.get('select'),/subject_hash,bucket,window_started,used_count/);
 });
 test('readiness fails when database does not have DNS verification migration columns',async()=>{
  const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
@@ -108,9 +111,9 @@ test('readiness coalesces concurrent public probes and caches successful results
    return new Response('[]',{status:200});}});
  const outcomes=await Promise.all(Array.from({length:40},()=>store.schemaReady()));
  assert.ok(outcomes.every(v=>v===true));
- assert.equal(calls,5);
+ assert.equal(calls,6);
  assert.equal(await store.schemaReady(),true);
- assert.equal(calls,5);
+ assert.equal(calls,6);
 });
 test('failed readiness probes are negatively cached to avoid database-amplification attacks',async()=>{
  let calls=0;
@@ -225,4 +228,17 @@ test('normal site and evidence lists select only public data columns at the data
     'Normal list must not request '+secret);
   }
  }
+});
+
+test('shared quota is requested through service-only PostgREST RPC',async()=>{
+ const calls=[];
+ const adapter=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async(url,init)=>{calls.push({url:new URL(url),init});
+   return new Response(JSON.stringify([{allowed:false,retry_after:24}]),{status:200});}});
+ const rate=await adapter.consumeQuota(A,'signed-profile','write');
+ assert.deepEqual(rate,{allowed:false,retryAfter:24});
+ assert.equal(calls[0].url.pathname,'/rest/v1/rpc/seo_consume_api_quota');
+ assert.equal(calls[0].init.method,'POST');
+ assert.deepEqual(JSON.parse(calls[0].init.body),{
+  p_tenant_id:A,p_subject:'signed-profile',p_bucket:'write'});
 });
