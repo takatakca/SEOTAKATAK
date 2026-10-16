@@ -12,7 +12,7 @@ if [[ "$ready" != true ]]; then echo "::error::CI PostgreSQL unavailable"; exit 
 # Supabase provides anon/authenticated roles; vanilla PostgreSQL does not.
 docker exec "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci \
  -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;' >/dev/null
-for file in sql/0001_seo_core.sql sql/0002_domain_verification.sql sql/0003_brief_editorial_review.sql sql/0004_site_deletion_receipts.sql; do
+for file in sql/0001_seo_core.sql sql/0002_domain_verification.sql sql/0003_brief_editorial_review.sql sql/0004_site_deletion_receipts.sql sql/0005_shared_rate_limits.sql; do
   docker exec -i "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci < "$file" >/dev/null
 done
 docker exec -i "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci < tests/sql/schema-smoke.sql

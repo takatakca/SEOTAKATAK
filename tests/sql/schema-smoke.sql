@@ -54,7 +54,7 @@ do $audit$
 declare
  table_name text;
 begin
- foreach table_name in array array['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts'] loop
+ foreach table_name in array array['seo_sites','seo_opportunities','seo_prospects','seo_briefs','seo_site_deletion_receipts','seo_api_rate_buckets'] loop
   if not exists (
    select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
    where n.nspname='public' and c.relname=table_name and c.relrowsecurity
@@ -70,8 +70,42 @@ begin
     has_function_privilege('authenticated','public.seo_delete_site_with_receipt(uuid,uuid,text,text)','EXECUTE') then
   raise exception 'Client can call privileged deletion RPC';
  end if;
+ if has_function_privilege('anon','public.seo_consume_api_quota(uuid,text,text)','EXECUTE') or
+    has_function_privilege('authenticated','public.seo_consume_api_quota(uuid,text,text)','EXECUTE') then
+   raise exception 'Browser can call shared quota RPC';
+ end if;
+ if not has_function_privilege('service_role','public.seo_consume_api_quota(uuid,text,text)','EXECUTE') then
+   raise exception 'Service role cannot call shared quota RPC';
+ end if;
  if not has_function_privilege('service_role','public.seo_delete_site_with_receipt(uuid,uuid,text,text)','EXECUTE') then
   raise exception 'Service role cannot use deletion RPC';
  end if;
 end $audit$;
+do $quota_test$
+declare
+ tenant uuid:='7d87a2c9-fb84-474a-8ccc-43d6fe47605c';
+ other uuid:='8d87a2c9-fb84-474a-8ccc-43d6fe47605d';
+ accepted boolean;
+ retry integer;
+ k integer;
+begin
+ for k in 1..8 loop
+  select q.allowed,q.retry_after into accepted,retry
+   from public.seo_consume_api_quota(tenant,'gsc-sync-user','import') q;
+  if not accepted or retry<>0 then raise exception 'GSC request should pass'; end if;
+ end loop;
+ select q.allowed,q.retry_after into accepted,retry
+  from public.seo_consume_api_quota(tenant,'gsc-sync-user','import') q;
+ if accepted or retry<1 or retry>60 then raise exception 'Shared limit did not reject'; end if;
+ select q.allowed,q.retry_after into accepted,retry
+  from public.seo_consume_api_quota(other,'gsc-sync-user','import') q;
+ if not accepted then raise exception 'Second tenant must be isolated'; end if;
+ select q.allowed,q.retry_after into accepted,retry
+  from public.seo_consume_api_quota(tenant,'different-user','import') q;
+ if not accepted then raise exception 'Second actor must be isolated'; end if;
+ if exists(select 1 from public.seo_api_rate_buckets
+  where subject_hash='gsc-sync-user') then
+  raise exception 'Quota must not store plaintext actors';
+ end if;
+end $quota_test$;
 rollback;
