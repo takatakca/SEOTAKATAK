@@ -10,7 +10,8 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [x] Correct JSON request-size guard to count raw bytes, including multibyte input.
 - [x] Implement manager-only dual-confirmation deletion of one tenant's SEO website and cascade records; verified via API and HTTP tests.
 - [x] Add tenant-scoped single-site JSON snapshot with sensitive field allowlists and truthful partial-result labels; V1 authenticated download route.
-- [ ] Add complete paginated workspace export, erasure receipts and an approved retention policy without touching TAKATAK central identity.
+- [x] Add tenant-scoped paginated workspace SEO data export, one collection at a time, with signed access, safe SQL selects and continuation metadata; V1 dashboard download UI.
+- [ ] Add regulatory-grade consistent snapshot, verifiable erasure receipts and owner-approved retention/subject-access policy across TAKATAK products; ordinary pages are not a transactionally consistent backup.
 - [x] Prevent public /ready request amplification with bounded per-store success/failure probe caching and concurrent-call coalescing.
 - [ ] Add a shared cross-instance/edge rate limit and approved audit/retention policy before large-scale production usage.
 - [x] Build server-validated DNS TXT ownership proof, short-lived challenge, secret redaction, anti-rotation guard and tests.

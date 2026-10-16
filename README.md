@@ -27,6 +27,7 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 - GET /v1/sites/:siteId/verification (seo:manage only; DNS challenge details)
 - POST /v1/sites/:siteId/verification/start (issues/rotates DNS TXT challenge)
 - POST /v1/sites/:siteId/verification/check (verifies live DNS, conditionally persists proof)
+- GET /v1/workspace/export?collection=sites|opportunities|prospects|briefs&offset=0 — signed tenant-scoped, paginated JSON export; 200 records/page, `hasMore` and `nextOffset`, allowlisted database columns, no DNS tokens or reviewer IDs. Follow pagination for each category. Exports are nontransactional.
 - GET /v1/sites/:siteId/export — client-tenant-scoped **bounded JSON site snapshot** with up to 200 SEO records from each collection, explicit coverage flags and redacted DNS/reviewer secrets. NOT a full account/workspace export.
 - GET /v1/sites/:siteId/summary (explicitly sampled, evidence-aware reporting)
 - GET /v1/sites/:siteId/opportunities.csv (tenant-filtered, spreadsheet-safe CSV)

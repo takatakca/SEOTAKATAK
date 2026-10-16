@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | ChatGPT/GitHub agent | main · fd0ff79f → CI 38844277527 PASS | Added tenant-filtered paginated workspace SEO export per collection, safe PostgREST selectors, 200-record pages and next-offset; tested malformed offsets and signed workspace isolation | V1 export dashboard PR #182 CI pending; production still blocked Coolify variables/approved migrations
+
+
 2026-10-15 | ChatGPT/GitHub agent | main · 24b2c1b4 → CI 38843705978 PASS | Added private per-site SEO JSON snapshot, explicit per-collection 200-row limit, allowlisted fields, no DNS/reviewer token disclosure, tenant isolation tests; V1 dashboard download added to PR #182 | V1 PR CI and coordinator review, non-billable DB/Coolify credentials pending
 
 
