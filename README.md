@@ -23,10 +23,11 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 - GET /v1/sites
 - POST /v1/sites {domain,niche,market,locale}
 - GET /v1/sites/:siteId
-- DELETE /v1/sites/:siteId {confirmDomain:"exact.example",confirmDelete:true} — irreversible tenant-scoped deletion of the SEO site; on database approval, foreign-key ON DELETE CASCADE also removes its keywords, prospects and briefs; TAKATAK master identity is unchanged
+- DELETE /v1/sites/:siteId {confirmDomain:"exact.example",confirmDelete:true} — atomic, auditable, irreversible tenant-scoped deletion of the SEO site; on database approval, foreign-key ON DELETE CASCADE also removes its keywords, prospects and briefs; TAKATAK master identity is unchanged
 - GET /v1/sites/:siteId/verification (seo:manage only; DNS challenge details)
 - POST /v1/sites/:siteId/verification/start (issues/rotates DNS TXT challenge)
 - POST /v1/sites/:siteId/verification/check (verifies live DNS, conditionally persists proof)
+- GET /v1/workspace/deletion-receipts?offset=0 — **seo:manage** only; paginated tenant-specific operational receipts (IDs, timestamp, counts; no actor identity), 100 rows/page; requires SQL migration 0004; NOT legal certification of ecosystem-wide data erasure.
 - GET /v1/workspace/export?collection=sites|opportunities|prospects|briefs&offset=0 — signed tenant-scoped, paginated JSON export; 200 records/page, `hasMore` and `nextOffset`, allowlisted database columns, no DNS tokens or reviewer IDs. Follow pagination for each category. Exports are nontransactional.
 - GET /v1/sites/:siteId/export — client-tenant-scoped **bounded JSON site snapshot** with up to 200 SEO records from each collection, explicit coverage flags and redacted DNS/reviewer secrets. NOT a full account/workspace export.
 - GET /v1/sites/:siteId/summary (explicitly sampled, evidence-aware reporting)
@@ -42,7 +43,7 @@ All routes under /v1 require a signed 60-second server-to-server token issued by
 
 Requires Node 22. Run npm run check. No third-party NPM packages required.
 
-1. Review and apply `sql/0001_seo_core.sql` followed by `sql/0002_domain_verification.sql` and `sql/0003_brief_editorial_review.sql`, in that order, to an explicitly authorized Supabase PostgreSQL project. This is a new schema: DO NOT change the TAKATAK V1 production DB without the database release coordinator approval.
+1. Review and apply `sql/0001_seo_core.sql` followed by `sql/0002_domain_verification.sql`, `sql/0003_brief_editorial_review.sql` and `sql/0004_site_deletion_receipts.sql`, in that order, to an explicitly authorized Supabase PostgreSQL project. This is a new schema: DO NOT change the TAKATAK V1 production DB without the database release coordinator approval.
 2. Set all variables in .env.example as runtime secrets in Coolify, never at build time. The service role key must never be sent to a browser.
 3. Set identical SEOTAKATAK_SIGNING_KEY in TAKATAK V1 and the SEO service. Configure SEOTAKATAK_API_URL in TAKATAK V1, pointing to the internal HTTPS SEO API.
 4. Build using the repository Dockerfile. Check GET /health = 200, GET /ready = 200, and GET /v1/sites without a valid token = 401. Test real database reads/writes and cross-tenant access before production launch.
@@ -65,3 +66,7 @@ The Node service applies per-process authenticated request quotas: read 120/minu
 ## SEO data export integrity and role validation
 
 The `/v1/workspace/export` API is an authenticated, per-tenant paginated view, not a guaranteed point-in-time snapshot. Retrieve every page of the four collections, following `nextOffset`, to obtain the currently available records. The content may change between page requests. Public/visitor roles must never have direct table privileges: CI now asserts PostgreSQL RLS on all SEO tables and no `anon` or `authenticated` table read/write privileges. This is tested in disposable Postgres, not by inspecting the owner's production grants.
+
+## Atomic SEO deletion receipts (reviewed migration 0004 required)
+
+A signed `seo:manage` operator can delete one owned SEO site after the exact-hostname and separate-confirmation checks. The server calls `seo_delete_site_with_receipt` in PostgreSQL: a single transaction locks the owned site, records deleted-child counts and the server-authenticated reviewer profile ID, deletes the site and cascades its dependent SEO rows. A wrong workspace/domain or a repeated request produces no successful receipt. The database retains a tenant-scoped receipt without retaining the deleted hostname in plaintext; the receipt API never returns the actor ID. Server-only `service_role` has EXECUTE permission, while `anon` and `authenticated` do not. An operational database receipt is **not** a cryptographic seal, a complete cross-product erasure certificate, or a retention-policy substitute. Approval of 0004 and a written retention/subject-access policy are outstanding.

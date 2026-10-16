@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-16 | ChatGPT/GitHub agent | main · b550b570 (CI pending) | Implemented atomic site deletion and persisted audit receipts, new tenant-scoped receipt API, SQL migration 0004 with PostgreSQL CI, secured site public serializers; V1 PR #196 opened draft for protected manager view | Confirm latest CI; complete V1 PR checks; owner approves SQL 0001–0004 and Coolify settings; validate real staging before production
+
+
 2026-10-15 | ChatGPT/GitHub agent | main · c6f65e80 → CI 38844898256 PASS | Hardened database SQL CI: RLS enabled and browser roles anon/authenticated have no direct SEO table privileges; corrected test SQL quoting; live Node HTTP export query validation. Backend + PostgreSQL/Docker green, Coolify still missing production values. | V1 PR #182 export CI check/coordinator review, owner-approved database and release
 
 
