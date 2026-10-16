@@ -145,6 +145,40 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
     if(parts[3]==='opportunities')return ok({opportunities:await store.listOpportunities(tenantId,siteId)});
     if(parts[3]==='prospects')return ok({prospects:await store.listProspects(tenantId,siteId)});
     if(parts[3]==='briefs')return ok({briefs:(await store.listBriefs(tenantId,siteId)).map(({reviewed_by,...brief})=>brief)});
+    if(parts[3]==='export'){
+     const [opportunities,prospects,briefs]=await Promise.all([
+      store.listOpportunities(tenantId,siteId),
+      store.listProspects(tenantId,siteId),
+      store.listBriefs(tenantId,siteId)
+     ]);
+     // Explicit allowlists avoid leaking verification secrets and reviewer IDs,
+     // including if a later database migration adds more private columns.
+     const fields=(record,allowed)=>Object.fromEntries(allowed.map(key=>[key,record[key]??null]));
+     const exportedSite=fields(site,['id','domain','niche','market','locale','created_at','verified_at']);
+     const exportedOpportunities=opportunities.map(row=>fields(row,[
+      'id','keyword','source','clicks','impressions','position','priority','updated_at'
+     ]));
+     const exportedProspects=prospects.map(row=>fields(row,[
+      'id','publication','url','relevance','status','created_at','updated_at'
+     ]));
+     const exportedBriefs=briefs.map(row=>fields(row,[
+      'id','keyword','angle','status','created_at','reviewed_at','review_note'
+     ]));
+     return ok({export:{
+      format:'seotakatak-site-snapshot',version:1,generatedAt:new Date().toISOString(),
+      site:exportedSite,opportunities:exportedOpportunities,
+      prospects:exportedProspects,briefs:exportedBriefs,
+      coverage:{
+       maxRowsPerCollection:200,guaranteedComplete:false,
+       limitReached:{
+        opportunities:opportunities.length>=200,
+        prospects:prospects.length>=200,
+        briefs:briefs.length>=200
+       },
+       note:'Bounded current database snapshot, not complete history or live provider measurements.'
+      }
+     }});
+    }
     if(parts[3]==='summary'){
      const [opportunities,prospects,briefs]=await Promise.all([
       store.listOpportunities(tenantId,siteId),store.listProspects(tenantId,siteId),store.listBriefs(tenantId,siteId)

@@ -143,3 +143,46 @@ test('editorial brief review requires manager, a draft, and a reason for rejecti
   }finally{store.reviewBrief=previousReview;}
  }finally{Date.now=old;}
 });
+
+test('SEO site snapshot is tenant-scoped, bounded and redacts private operational tokens',async()=>{
+ const originalOwned=store.ownedSite;
+ const originalBriefs=store.listBriefs;
+ const originalProspects=store.listProspects;
+ const originalOpportunities=store.listOpportunities;
+ const savedDate=Date.now;
+ try{
+  Date.now=()=>1001000;
+  store.ownedSite=async(t,id)=>t===A&&id===siteId?{
+    ...site,verification_token:'secret-txt-token',verification_issued_at:'2026-10-15T00:00:00Z',
+    service_role_key:'internal-only',verified_at:null
+  }:null;
+  store.listBriefs=async()=>[{
+    id:siteId,keyword:'local SEO',angle:'Original sourced research',status:'approved',
+    reviewed_by:'private-user-profile',review_note:'Approved',private_key:'never-export'
+  }];
+  store.listProspects=async()=>[{id:siteId,publication:'Example',url:'https://example.org',
+   relevance:'Relevant local editorial publication',status:'identified',internal_note:'secret'}];
+  store.listOpportunities=async()=>[{id:siteId,keyword:'restaurant Montreal',source:'search_console',
+    clicks:2,impressions:10,position:4,priority:70,provider_token:'secret'}];
+  const path='/v1/sites/'+siteId+'/export';
+  const own=await req('GET',path,null,jwt(A,['seo:view']));
+  assert.equal(own.code,200);
+  assert.equal(own.result.export.format,'seotakatak-site-snapshot');
+  assert.equal(own.result.export.coverage.guaranteedComplete,false);
+  assert.equal(own.result.export.briefs[0].status,'approved');
+  const serialized=JSON.stringify(own.result);
+  for(const secret of ['secret-txt-token','private-user-profile','never-export','provider_token',
+   'internal_note','service_role_key'])assert.equal(serialized.includes(secret),false);
+  assert.equal((await req('GET',path,null,jwt(B,['seo:view']))).code,404);
+  assert.equal((await req('GET',path,null,jwt(A,['seo:import']))).code,403);
+  store.listOpportunities=async()=>Array.from({length:200},(_,i)=>({keyword:'query '+i}));
+  const limited=await req('GET',path,null,jwt(A,['seo:view']));
+  assert.equal(limited.result.export.coverage.limitReached.opportunities,true);
+ }finally{
+  Date.now=savedDate;
+  store.ownedSite=originalOwned;
+  store.listBriefs=originalBriefs;
+  store.listProspects=originalProspects;
+  store.listOpportunities=originalOpportunities;
+ }
+});
