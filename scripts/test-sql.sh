@@ -34,7 +34,7 @@ rejected=0
 for n in $(seq 1 20); do
  if [[ "$(tr -d '\r\n ' < "$quota_dir/$n")" == "t" ]]; then
   passed=$((passed+1))
- elif [[ "$(tr -d '\\r\\n ' < "$quota_dir/$n")" == "f" ]]; then
+ elif [[ "$(tr -d '\r\n ' < "$quota_dir/$n")" == "f" ]]; then
   rejected=$((rejected+1))
  else
   echo "::error::Unexpected result from concurrent PostgreSQL quota operation $n"
