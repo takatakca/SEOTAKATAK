@@ -159,6 +159,26 @@ test('editorial brief review requires manager, a draft, and a reason for rejecti
  }finally{Date.now=old;}
 });
 
+test('normal site registry and detail redact tenant and future private schema columns',async()=>{
+ const original=store.ownedSite,originalList=store.listSites,now=Date.now;
+ try{
+  Date.now=()=>1001000;
+  const secretSite={...site,tenant_id:A,verification_token:'secret-abcdef',
+   verification_issued_at:'secret-time',access_key:'sensitive-future-column'};
+  store.ownedSite=async(t,id)=>t===A&&id===siteId?secretSite:null;
+  store.listSites=async t=>t===A?[secretSite]:[];
+  const detail=await req('GET','/v1/sites/'+siteId,null,jwt(A,['seo:view']));
+  const list=await req('GET','/v1/sites',null,jwt(A,['seo:view']));
+  assert.equal(detail.code,200);
+  assert.equal(list.code,200);
+  for(const item of [detail.result.site,list.result.sites[0]]){
+   assert.equal(item.domain,site.domain);
+   for(const secret of ['tenant_id','verification_token','verification_issued_at','access_key'])
+    assert.equal(Object.hasOwn(item,secret),false);
+  }
+ }finally{store.ownedSite=original;store.listSites=originalList;Date.now=now;}
+});
+
 test('SEO site snapshot is tenant-scoped, bounded and redacts private operational tokens',async()=>{
  const originalOwned=store.ownedSite;
  const originalBriefs=store.listBriefs;

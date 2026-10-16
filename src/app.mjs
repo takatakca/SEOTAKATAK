@@ -7,10 +7,10 @@ const statuses=new Set(['identified','researching','contacted','declined']); // 
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
 const fail=(code,error,headers)=>({code,result:{ok:false,error},headers});
 const ok=(body={},code=200)=>({code,result:{ok:true,...body}});
-const publicSite=site=>{
- const {verification_token,verification_issued_at,...fields}=site;
- return fields;
-};
+// Explicit allowlist: never expose future schema columns from privileged PostgREST rows.
+const publicSite=site=>Object.fromEntries(
+ ['id','domain','niche','market','locale','created_at','verified_at'].map(field=>[field,site[field]??null])
+);
 function domain(input){
  if(typeof input!=='string'||input.length>253)return null;
  try{
