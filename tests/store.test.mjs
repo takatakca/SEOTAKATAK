@@ -92,3 +92,19 @@ test('failed readiness probes are negatively cached to avoid database-amplificat
  await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===503);
  assert.equal(calls,count);
 });
+
+test('editorial review is an atomic, tenant-scoped draft-to-decision update',async()=>{
+ const calls=[];
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async(url,init)=>{calls.push({url:new URL(url),init});
+   return new Response(JSON.stringify([{id:SITE}]),{status:200});}});
+ await store.reviewBrief(A,SITE,SITE,{status:'approved',reviewed_by:'reviewer',reviewed_at:new Date().toISOString(),review_note:null});
+ const {url,init}=calls[0];
+ assert.equal(init.method,'PATCH');
+ assert.ok(url.pathname.endsWith('/seo_briefs'));
+ assert.equal(url.searchParams.get('tenant_id'),'eq.'+A);
+ assert.equal(url.searchParams.get('site_id'),'eq.'+SITE);
+ assert.equal(url.searchParams.get('id'),'eq.'+SITE);
+ assert.equal(url.searchParams.get('status'),'eq.draft');
+ assert.equal(JSON.parse(init.body).status,'approved');
+});

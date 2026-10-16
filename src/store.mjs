@@ -43,7 +43,7 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
       request('seo_sites',{select:'id,tenant_id,domain,verification_token,verification_issued_at,verified_at',limit:0}),
       request('seo_opportunities',{select:'id,tenant_id,site_id,keyword',limit:0}),
       request('seo_prospects',{select:'id,tenant_id,site_id,status',limit:0}),
-      request('seo_briefs',{select:'id,tenant_id,site_id,status',limit:0}),
+      request('seo_briefs',{select:'id,tenant_id,site_id,status,reviewed_at,reviewed_by,review_note',limit:0}),
      ]);
      readinessResult=true;
      readinessUntil=Date.now()+10_000;
@@ -71,6 +71,11 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
   async createProspect(tenantId,siteId,data){return request('seo_prospects',{method:'POST',body:{...data,tenant_id:tenantId,site_id:siteId}});},
   async updateProspect(tenantId,siteId,id,data){return request('seo_prospects',{method:'PATCH',filter:{...filter(tenantId,siteId),id:eq(id)},body:data});},
   async listBriefs(tenantId,siteId){return request('seo_briefs',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200});},
-  async createBrief(tenantId,siteId,data){return request('seo_briefs',{method:'POST',body:{...data,tenant_id:tenantId,site_id:siteId}});}
+  async createBrief(tenantId,siteId,data){return request('seo_briefs',{method:'POST',body:{...data,tenant_id:tenantId,site_id:siteId}});},
+  async reviewBrief(tenantId,siteId,id,updates){
+   return request('seo_briefs',{method:'PATCH',filter:{
+    ...filter(tenantId,siteId),id:eq(id),status:'eq.draft'
+   },body:updates});
+  }
  };
 }

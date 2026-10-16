@@ -144,7 +144,7 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
    if(parts.length===4&&method==='GET'){
     if(parts[3]==='opportunities')return ok({opportunities:await store.listOpportunities(tenantId,siteId)});
     if(parts[3]==='prospects')return ok({prospects:await store.listProspects(tenantId,siteId)});
-    if(parts[3]==='briefs')return ok({briefs:await store.listBriefs(tenantId,siteId)});
+    if(parts[3]==='briefs')return ok({briefs:(await store.listBriefs(tenantId,siteId)).map(({reviewed_by,...brief})=>brief)});
     if(parts[3]==='summary'){
      const [opportunities,prospects,briefs]=await Promise.all([
       store.listOpportunities(tenantId,siteId),store.listProspects(tenantId,siteId),store.listBriefs(tenantId,siteId)
@@ -171,6 +171,20 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
     if(!statuses.has(json.status))return fail(400,'invalid_status');
     const result=await store.updateProspect(tenantId,siteId,parts[4],{status:json.status,updated_at:new Date().toISOString()});
     return result.length?ok({prospect:result[0]}):fail(404,'prospect_not_found');
+   }
+
+   if(parts.length===6&&parts[3]==='briefs'&&ID.test(parts[4])&&parts[5]==='review'&&method==='PATCH'){
+    if(!['approved','rejected'].includes(json.status))return fail(400,'invalid_review_status');
+    const note=asText(json.note,500);
+    if(json.note!==undefined&&(typeof json.note!=='string'||json.note.length>500))return fail(400,'invalid_review_note');
+    if(json.status==='rejected'&&note.length<10)return fail(400,'review_reason_required');
+    const reviewed=await store.reviewBrief(tenantId,siteId,parts[4],{
+      status:json.status,review_note:note||null,
+      reviewed_by:identity.subject,reviewed_at:new Date().toISOString()
+    });
+    if(!reviewed.length)return fail(409,'brief_not_draft_or_unavailable');
+    const {reviewed_by,...publicBrief}=reviewed[0];
+    return ok({brief:publicBrief});
    }
    if(parts.length===4&&parts[3]==='briefs'&&method==='POST'){
     const keyword=asText(json.keyword,160),angle=asText(json.angle,500);

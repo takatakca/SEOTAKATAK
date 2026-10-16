@@ -17,7 +17,8 @@ const store={
  async createProspect(t,id,data){return [{...data,tenant_id:t,site_id:id}];},
  async updateProspect(){return [];},
  async listBriefs(){return [];},
- async createBrief(t,id,data){return [{...data,tenant_id:t,site_id:id}];}
+ async createBrief(t,id,data){return [{...data,tenant_id:t,site_id:id}];},
+ async reviewBrief(t,id,briefId,data){return t===A&&id===siteId?[{id:briefId,tenant_id:t,site_id:id,keyword:'SEO',angle:'Original useful discussion',...data}]:[];}
 };
 const jwt=(tenantId=A,permissions=['seo:manage'])=>'Bearer '+issueToken({tenantId,subject:'user',permissions,now:1000},key);
 const req=(method,path,body,authorization=jwt())=>dispatch({method,path,body,authorization},{store,signingKey:key});
@@ -120,5 +121,20 @@ test('site deletion requires independent manager consent, exact domain and tenan
   assert.equal(deleted.code,200);
   assert.equal(deleted.result.deleted,true);
   assert.equal(deleted.result.siteId,siteId);
+ }finally{Date.now=old;}
+});
+
+test('editorial brief review requires manager, a draft, and a reason for rejection',async()=>{
+ const old=Date.now;try{Date.now=()=>1001000;
+  const path='/v1/sites/'+siteId+'/briefs/'+siteId+'/review';
+  assert.equal((await req('PATCH',path,{status:'approved'},jwt(A,['seo:view']))).code,403);
+  assert.equal((await req('PATCH',path,{status:'approved'},jwt(B,['seo:manage']))).code,404);
+  assert.equal((await req('PATCH',path,{status:'published'})).code,400);
+  assert.equal((await req('PATCH',path,{status:'rejected',note:'too short'})).code,400);
+  const accepted=await req('PATCH',path,{status:'approved',note:'Reviewed for original research'});
+  assert.equal(accepted.code,200);
+  assert.equal(accepted.result.brief.status,'approved');
+  assert.equal(accepted.result.brief.reviewed_by,undefined);
+  assert.equal((await req('PATCH',path,{status:'rejected',note:'Insufficient original sources'})).code,200);
  }finally{Date.now=old;}
 });
