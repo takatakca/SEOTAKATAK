@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { createStore } from './store.mjs';
 import { dispatch } from './app.mjs';
 const key=process.env.SEOTAKATAK_SIGNING_KEY;
@@ -8,12 +9,23 @@ if(process.env.NODE_ENV==='production'&&(!store||!key||key.length<32)){console.e
 const port=Number(process.env.PORT||3000);
 if(!Number.isInteger(port)||port<1||port>65535)throw new Error('Invalid PORT');
 const server=http.createServer(async(req,res)=>{
+ const started=Date.now(),requestId=randomUUID();
+ res.setHeader('X-Request-ID',requestId);
+ // Never log raw URLs, query strings, tokens, IPs, request bodies or customer identifiers.
+ let routeGroup='api';
+ res.on('finish',()=>console.info(JSON.stringify({
+  event:'http_request',requestId,routeGroup,method:String(req.method||'').slice(0,12),
+  status:res.statusCode,durationMs:Date.now()-started
+ })));
  res.setHeader('Content-Type','application/json; charset=utf-8');
  res.setHeader('Cache-Control','no-store');
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Referrer-Policy','no-referrer');
  res.setHeader('X-Frame-Options','DENY');
- const url=new URL(req.url||'/', 'http://localhost:'+port);
+ let url;
+ try{url=new URL(req.url||'/', 'http://localhost:'+port);}
+ catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_path'}));return;}
+ routeGroup=url.pathname==='/health'?'health':url.pathname==='/ready'?'ready':'api';
  if(req.method==='OPTIONS'){res.writeHead(405).end(JSON.stringify({ok:false,error:'method_not_allowed'}));return;}
  let body;
  // Reject oversized uploads while streaming bytes, not after UTF-8 decoding.
@@ -31,7 +43,15 @@ const server=http.createServer(async(req,res)=>{
    body=JSON.parse(Buffer.concat(chunks).toString('utf8'));
   }catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_json'}));return;}
  }
- const response=await dispatch({method:req.method,path:url.pathname,query:Object.fromEntries(url.searchParams),authorization:req.headers.authorization,body},{store,signingKey:key});
+ let response;
+ try{
+  response=await dispatch({method:req.method,path:url.pathname,query:Object.fromEntries(url.searchParams),authorization:req.headers.authorization,body},{store,signingKey:key});
+ }catch{
+  console.error(JSON.stringify({event:'unhandled_api_error',requestId}));
+  if(!res.headersSent)res.writeHead(503).end(JSON.stringify({ok:false,error:'service_unavailable'}));
+  else res.end();
+  return;
+ }
  if(response.headers)for(const [name,value] of Object.entries(response.headers))res.setHeader(name,value);
  if(typeof response.raw==='string'){
   res.setHeader('Content-Type',response.contentType);

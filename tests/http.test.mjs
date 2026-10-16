@@ -27,7 +27,7 @@ async function start(){
   if(child.exitCode!==null)throw new Error('SEO service exited: '+output);
   try{
    const response=await fetch(root+'/health',{signal:AbortSignal.timeout(500)});
-   if(response.ok)return {root,child};
+   if(response.ok)return {root,child,logs:()=>output};
   }catch{}
   await delay(50);
  }
@@ -39,13 +39,17 @@ async function request(root,path,options){
  return {status:response.status,headers:response.headers,body:await response.json()};
 }
 test('real HTTP server rejects bad, multibyte and oversized JSON without leaking internals',async()=>{
- const {root,child}=await start();
+ const {root,child,logs}=await start();
  try{
   const alive=await request(root,'/health');
   assert.equal(alive.status,200);
   assert.equal(alive.body.service,'seotakatak');
   assert.equal(alive.headers.get('cache-control'),'no-store');
   assert.equal(alive.headers.get('x-content-type-options'),'nosniff');
+  const firstRequestId=alive.headers.get('x-request-id');
+  assert.match(firstRequestId,/^[a-f0-9]{8}-[a-f0-9-]{27,}$/i);
+  const secondRequest=await request(root,'/health');
+  assert.notEqual(secondRequest.headers.get('x-request-id'),firstRequestId);
 
   // The live HTTP listener must forward URL pagination parameters to the
   // signed API instead of treating a workspace export as an unvalidated path.
@@ -84,6 +88,15 @@ test('real HTTP server rejects bad, multibyte and oversized JSON without leaking
 
   const healthyAfter=await request(root,'/health');
   assert.equal(healthyAfter.status,200);
+  // Log records are privacy-minimized operational metadata, never auth tokens.
+  await new Promise(resolve=>setTimeout(resolve,20));
+  const emitted=logs();
+  assert.match(emitted,/"event":"http_request"/);
+  assert.match(emitted,/"routeGroup":"api"/);
+  assert.equal(emitted.includes(token),false);
+  assert.equal(emitted.includes('takatak.ca'),false);
+  assert.equal(emitted.includes('long'),false);
+  assert.equal(emitted.includes('content-type'),false);
  }finally{
   child.kill('SIGTERM');
   await Promise.race([new Promise(resolve=>child.once('exit',resolve)),delay(1000)]);
