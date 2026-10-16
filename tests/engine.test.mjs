@@ -135,6 +135,11 @@ test('editorial brief review requires manager, a draft, and a reason for rejecti
   assert.equal(accepted.code,200);
   assert.equal(accepted.result.brief.status,'approved');
   assert.equal(accepted.result.brief.reviewed_by,undefined);
-  assert.equal((await req('PATCH',path,{status:'rejected',note:'Insufficient original sources'})).code,200);
+  // Persisted row status=approved must block any subsequent review action.
+  const previousReview=store.reviewBrief;
+  try{
+   store.reviewBrief=async()=>[];
+   assert.equal((await req('PATCH',path,{status:'rejected',note:'Insufficient original sources'})).code,409);
+  }finally{store.reviewBrief=previousReview;}
  }finally{Date.now=old;}
 });

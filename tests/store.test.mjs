@@ -49,6 +49,9 @@ test('readiness validates every table and DNS verification column without readin
  const sites=seen.find(url=>url.pathname.endsWith('/seo_sites'));
  assert.ok(sites);
  assert.match(sites.searchParams.get('select'),/verification_token,verification_issued_at,verified_at/);
+ const briefs=seen.find(url=>url.pathname.endsWith('/seo_briefs'));
+ assert.ok(briefs);
+ assert.match(briefs.searchParams.get('select'),/reviewed_at,reviewed_by,review_note/);
 });
 test('readiness fails when database does not have DNS verification migration columns',async()=>{
  const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
