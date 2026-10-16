@@ -14,5 +14,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm run check
-      - run: bash -n scripts/deploy-coolify.sh
+      - run: bash -n scripts/deploy-coolify.sh scripts/test-sql.sh
+      - name: PostgreSQL migration and tenant isolation checks
+        run: bash scripts/test-sql.sh
       - run: docker build -t seotakatak:ci .
