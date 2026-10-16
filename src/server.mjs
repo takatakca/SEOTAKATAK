@@ -17,8 +17,7 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='OPTIONS'){res.writeHead(405).end(JSON.stringify({ok:false,error:'method_not_allowed'}));return;}
  let body;
  // Reject oversized uploads while streaming bytes, not after UTF-8 decoding.
- // Destroying the request immediately can interrupt the 413 response, so drain
- // only the remaining bounded transport data after the error is sent.
+ // Stop parsing as soon as the 64 KiB transport limit is exceeded.
  if(req.method==='POST'||req.method==='PATCH'){
   if(!(req.headers['content-type']||'').startsWith('application/json')){res.writeHead(415).end(JSON.stringify({ok:false,error:'json_required'}));return;}
   try{
