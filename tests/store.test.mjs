@@ -108,9 +108,9 @@ test('readiness coalesces concurrent public probes and caches successful results
    return new Response('[]',{status:200});}});
  const outcomes=await Promise.all(Array.from({length:40},()=>store.schemaReady()));
  assert.ok(outcomes.every(v=>v===true));
- assert.equal(calls,4);
+ assert.equal(calls,5);
  assert.equal(await store.schemaReady(),true);
- assert.equal(calls,4);
+ assert.equal(calls,5);
 });
 test('failed readiness probes are negatively cached to avoid database-amplification attacks',async()=>{
  let calls=0;
