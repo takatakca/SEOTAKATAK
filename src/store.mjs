@@ -26,16 +26,35 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
   }catch(e){if(e instanceof DatabaseError)throw e;throw new DatabaseError(503);}finally{clearTimeout(timeout);}
  }
  const eq=x=>'eq.'+x,filter=(tenantId,siteId)=>({tenant_id:eq(tenantId),site_id:eq(siteId)});
+ // Public /ready probes must not amplify unauthenticated traffic into four
+ // PostgREST requests per caller. Cache per store instance, never across tenants.
+ let readinessUntil=0,readinessResult=null,readinessPending=null;
  return {
   async schemaReady(){
-   // Limit zero validates the required schema columns without returning tenant data.
-   await Promise.all([
-    request('seo_sites',{select:'id,tenant_id,domain,verification_token,verification_issued_at,verified_at',limit:0}),
-    request('seo_opportunities',{select:'id,tenant_id,site_id,keyword',limit:0}),
-    request('seo_prospects',{select:'id,tenant_id,site_id,status',limit:0}),
-    request('seo_briefs',{select:'id,tenant_id,site_id,status',limit:0}),
-   ]);
-   return true;
+   if(readinessResult!==null&&Date.now()<readinessUntil){
+    if(!readinessResult)throw new DatabaseError(503);
+    return true;
+   }
+   if(readinessPending)return readinessPending;
+   readinessPending=(async()=>{
+    try{
+     // Limit zero validates schema without accessing customer records.
+     await Promise.all([
+      request('seo_sites',{select:'id,tenant_id,domain,verification_token,verification_issued_at,verified_at',limit:0}),
+      request('seo_opportunities',{select:'id,tenant_id,site_id,keyword',limit:0}),
+      request('seo_prospects',{select:'id,tenant_id,site_id,status',limit:0}),
+      request('seo_briefs',{select:'id,tenant_id,site_id,status',limit:0}),
+     ]);
+     readinessResult=true;
+     readinessUntil=Date.now()+10_000;
+     return true;
+    }catch(error){
+     readinessResult=false;
+     readinessUntil=Date.now()+5_000;
+     throw error;
+    }finally{readinessPending=null;}
+   })();
+   return readinessPending;
   },
   async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200});},
   async createSite(tenantId,data){return request('seo_sites',{method:'POST',body:{...data,tenant_id:tenantId}});},

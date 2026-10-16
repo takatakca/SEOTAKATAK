@@ -71,3 +71,24 @@ test('site deletion is a tenant-filtered PostgREST DELETE, not a global domain d
  assert.equal(requests[0].url.searchParams.get('id'),'eq.'+SITE);
  assert.equal(requests[0].options.headers.Prefer,'return=representation');
 });
+
+test('readiness coalesces concurrent public probes and caches successful results',async()=>{
+ let calls=0;
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async()=>{calls++;await new Promise(resolve=>setTimeout(resolve,5));
+   return new Response('[]',{status:200});}});
+ const outcomes=await Promise.all(Array.from({length:40},()=>store.schemaReady()));
+ assert.ok(outcomes.every(v=>v===true));
+ assert.equal(calls,4);
+ assert.equal(await store.schemaReady(),true);
+ assert.equal(calls,4);
+});
+test('failed readiness probes are negatively cached to avoid database-amplification attacks',async()=>{
+ let calls=0;
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async()=>{calls++;return new Response('migration missing',{status:400});}});
+ await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===400);
+ const count=calls;
+ await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===503);
+ assert.equal(calls,count);
+});
