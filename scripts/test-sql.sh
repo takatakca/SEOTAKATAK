@@ -5,7 +5,7 @@ docker run -d --rm --name "$name" -e POSTGRES_PASSWORD=only-ci-test -e POSTGRES_
 trap 'docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
 ready=false
 for attempt in $(seq 1 35); do
-  if docker exec "$name" pg_isready -U postgres -d seo_ci >/dev/null 2>&1; then ready=true; break; fi
+  if docker exec "$name" psql -v ON_ERROR_STOP=1 -U postgres -d seo_ci -tAc 'SELECT 1' >/dev/null 2>&1; then ready=true; break; fi
   sleep 1
 done
 if [[ "$ready" != true ]]; then echo "::error::CI PostgreSQL unavailable"; exit 1; fi
