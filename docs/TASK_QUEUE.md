@@ -32,7 +32,8 @@ Order by security and operational dependencies. Do not duplicate completed work.
 - [ ] Obtain database owner approval for `sql/0003_brief_editorial_review.sql` after 0001+0002; verify schema and real review transition.
 - [ ] Add multilingual original content creation, explicit CMS connection and separate verified-domain publishing consent (not part of editorial approval).
 - [ ] Add evidence-based AI answer citation observation through approved provider/API; no synthetic positions presented as observed.
-- [ ] Add per-client usage limits, privacy retention/erase flow, billing entitlements if approved, performance/security load tests, metrics/alarms, optional automation service.
+- [x] Apply explicit API field allowlists and privacy-minimized HTTP request IDs, logs and controlled 503 error boundaries.
+- [ ] Add approved central log aggregation/metrics/alerts, distributed rate controls, client usage entitlements, legal retention/backup erase flow, performance/load tests and optional automation service.
 - [ ] Verify actual deployed git SHA; document rollback rehearsal and owner sign-off.
 
 Run locally: `npm run check` (Node 22), `docker build -t seotakatak:ci .` and `bash -n scripts/deploy-coolify.sh`.

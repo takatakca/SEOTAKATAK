@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-16 | ChatGPT/GitHub agent | main · 216b205b → CI 38885007096 PASS | Explicit privacy field serializers for read/write SEO API; request UUIDs, privacy-minimized JSON operational logs, fail-closed dispatch exceptions; tests pass on Node, SQL 0001–0004 and Docker | PR #196 coordinator review, approved Supabase/Coolify and real staging isolation pending
+
+
 2026-10-16 | ChatGPT/GitHub agent | main · b550b570 (CI pending) | Implemented atomic site deletion and persisted audit receipts, new tenant-scoped receipt API, SQL migration 0004 with PostgreSQL CI, secured site public serializers; V1 PR #196 opened draft for protected manager view | Confirm latest CI; complete V1 PR checks; owner approves SQL 0001–0004 and Coolify settings; validate real staging before production
 
 
