@@ -53,6 +53,13 @@ test('real HTTP server rejects bad, multibyte and oversized JSON without leaking
   const unsupported=await request(root,'/v1/sites',{method:'POST',headers:{'content-type':'text/plain'},body:'hi'});
   assert.equal(unsupported.status,415);
 
+  // The destructive endpoint must parse JSON and still enforce a signed manager.
+  const deletionDenied=await request(root,'/v1/sites/7d87a2c9-fb84-474a-8ccc-43d6fe47605e',{
+   method:'DELETE',headers:{'content-type':'application/json'},
+   body:JSON.stringify({confirmDelete:true,confirmDomain:'takatak.ca'})
+  });
+  assert.equal(deletionDenied.status,401);
+
   const oversized=await request(root,'/v1/sites',{method:'POST',
    headers:{'content-type':'application/json'},body:JSON.stringify({long:'a'.repeat(65536)})});
   assert.equal(oversized.status,413);
