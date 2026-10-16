@@ -58,3 +58,7 @@ On a disposable client A site with at least one content draft, prospective backl
 ### Paginated workspace export smoke (approved staging only)
 
 With approved database migrations, create two distinct clients A/B with sites, briefs, prospects and opportunities. Request `GET /v1/workspace/export?collection=sites&offset=0` under a signed client A view token; data must contain only A records, `pageSize=200`, `hasMore` and `nextOffset`. Repeat independently for the other three collections, changing `offset` until `hasMore=false`. Client B must never receive A records. Unknown collections, malformed offsets and import-only scopes must fail; exported JSON must omit verification-token and reviewer-ID fields. V1 `/dashboard/seo/exports` must require the active client and `view_reports`, offer per-page private/no-store attachment downloads, and show the nontransactional warning. This validation is **not completed on live production**.
+
+### Database privilege smoke checks
+
+Isolated SQL CI asserts that every SEO table has PostgreSQL row-level security enabled and that temporary `anon`/`authenticated` roles cannot directly SELECT/INSERT/UPDATE SEO data. These assertions pass on a disposable PostgreSQL 16 schema; they **do not prove permissions of the owner-approved real Supabase project**. After approval and migration 0001→0002→0003, repeat `pg_class.relrowsecurity` and `has_table_privilege` checks against live deployment under authorized DB admin, then run real client A/B negative tests. Do not share service-role credentials in logs.

@@ -2,7 +2,7 @@
 
 Deploy repository takatakca/SEOTAKATAK `main` using the root Dockerfile (Node 22, port 3000). TAKATAK V1 retains login, authorization and the central dashboard.
 
-Provision an approved PostgreSQL/Supabase database and apply `sql/0001_seo_core.sql` after database-owner approval. In Coolify set runtime secrets `SEO_SUPABASE_URL`, `SEO_SUPABASE_SERVICE_ROLE_KEY` and `SEOTAKATAK_SIGNING_KEY`. Never expose service keys in a browser or commit them.
+Provision an approved PostgreSQL/Supabase database and apply `sql/0001_seo_core.sql`, then `sql/0002_domain_verification.sql`, then `sql/0003_brief_editorial_review.sql`, in that order after database-owner approval. In Coolify set runtime secrets `SEO_SUPABASE_URL`, `SEO_SUPABASE_SERVICE_ROLE_KEY` and `SEOTAKATAK_SIGNING_KEY`. Never expose service keys in a browser or commit them.
 
 For the SEOTAKATAK GitHub repository, Settings > Environments > production: set secret `SEOTAKATAK_COOLIFY_API_TOKEN` (Coolify deploy-scoped API token), and variables `SEOTAKATAK_COOLIFY_API_URL` (HTTPS origin), `SEOTAKATAK_COOLIFY_APP_UUID`, `SEOTAKATAK_HEALTH_URL` (SEO application HTTPS origin).
 

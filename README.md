@@ -61,3 +61,7 @@ The Node service applies per-process authenticated request quotas: read 120/minu
 ## Isolated SQL migration verification
 
 `SEOTAKATAK CI` now starts a disposable PostgreSQL 16 container, bootstraps only its test-only Supabase `anon` and `authenticated` roles, runs migrations `0001`, `0002`, `0003` in order and asserts review consistency, composite tenant foreign keys and cascading deletion in a rollback transaction. Run `bash scripts/test-sql.sh` where Docker is available. **This never migrates production or connects to a paid database.** Real migrations still require owner approval, backups and release coordination.
+
+## SEO data export integrity and role validation
+
+The `/v1/workspace/export` API is an authenticated, per-tenant paginated view, not a guaranteed point-in-time snapshot. Retrieve every page of the four collections, following `nextOffset`, to obtain the currently available records. The content may change between page requests. Public/visitor roles must never have direct table privileges: CI now asserts PostgreSQL RLS on all SEO tables and no `anon` or `authenticated` table read/write privileges. This is tested in disposable Postgres, not by inspecting the owner's production grants.

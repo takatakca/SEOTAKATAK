@@ -1,5 +1,8 @@
 # SEOTAKATAK Worklog
 
+2026-10-15 | ChatGPT/GitHub agent | main · c6f65e80 → CI 38844898256 PASS | Hardened database SQL CI: RLS enabled and browser roles anon/authenticated have no direct SEO table privileges; corrected test SQL quoting; live Node HTTP export query validation. Backend + PostgreSQL/Docker green, Coolify still missing production values. | V1 PR #182 export CI check/coordinator review, owner-approved database and release
+
+
 2026-10-15 | ChatGPT/GitHub agent | main · fd0ff79f → CI 38844277527 PASS | Added tenant-filtered paginated workspace SEO export per collection, safe PostgREST selectors, 200-record pages and next-offset; tested malformed offsets and signed workspace isolation | V1 export dashboard PR #182 CI pending; production still blocked Coolify variables/approved migrations
 
 

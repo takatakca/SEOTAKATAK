@@ -44,3 +44,7 @@ An authorized TAKATAK reader may obtain a bounded JSON snapshot for one SEO site
 ## Paginated workspace portability
 
 Provide four separately pageable SEO collections (`sites`, `opportunities`, `prospects`, `briefs`) via `GET /v1/workspace/export`, with `offset` 0–1,000,000 and a fixed 200-row page size. The backend always derives `tenant_id` from a verified TAKATAK JWT and queries only allowlisted fields: site ownership/DNS secrets and reviewer profile identifiers are not exported. PostgREST selects `id.asc` and fetches 201 rows to indicate the next page. Each page is **not transactionally consistent with other pages**; it may differ if records are created or deleted while exporting. This is a data portability feature, not a certified full GDPR/Quebec-law disclosure, backup, or account erasure, and does not modify TAKATAK master identity.
+
+## Database access-control invariants
+
+The SEO backend uses a server-only service role with mandatory tenant filtering; browser-originated `anon`/`authenticated` must not receive table privileges on `seo_sites`, `seo_opportunities`, `seo_prospects` or `seo_briefs`. GitHub CI checks each table's `relrowsecurity` and denies role privileges in a temporary PostgreSQL 16 container. These are preflight tests, not live Supabase permission checks. Existing production security remains unverified until approved deployment and negative access tests.
