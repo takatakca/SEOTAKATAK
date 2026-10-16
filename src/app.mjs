@@ -97,6 +97,13 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
    const siteId=parts[2],site=await store.ownedSite(tenantId,siteId);
    if(!site)return fail(404,'site_not_found');
    if(parts.length===3&&method==='GET')return ok({site:publicSite(site)});
+   if(parts.length===3&&method==='DELETE'){
+    // Intentional cascading deletion: require both a literal domain and a separate approval flag.
+    if(json.confirmDelete!==true||typeof json.confirmDomain!=='string'||
+       json.confirmDomain.trim().toLowerCase()!==site.domain)return fail(400,'site_deletion_confirmation_required');
+    const removed=await store.deleteSite(tenantId,siteId);
+    return removed.length?ok({deleted:true,siteId}):fail(409,'site_deletion_conflict');
+   }
    // Domain verification is an independent evidence gate; registration alone is not ownership.
    if(parts.length===4&&parts[3]==='verification'&&method==='GET'){
     if(!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');

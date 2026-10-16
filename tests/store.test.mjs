@@ -56,3 +56,18 @@ test('readiness fails when database does not have DNS verification migration col
  });
  await assert.rejects(()=>store.schemaReady(),error=>error instanceof DatabaseError&&error.status===400);
 });
+
+test('site deletion is a tenant-filtered PostgREST DELETE, not a global domain deletion',async()=>{
+ const requests=[];
+ const store=createStore({baseUrl:'https://example.supabase.co',serviceKey:'server-only-test',
+  fetchImpl:async(url,options)=>{
+   requests.push({url:new URL(url),options});
+   return new Response(JSON.stringify([{id:SITE}]),{status:200});
+  }});
+ await store.deleteSite(A,SITE);
+ assert.equal(requests.length,1);
+ assert.equal(requests[0].options.method,'DELETE');
+ assert.equal(requests[0].url.searchParams.get('tenant_id'),'eq.'+A);
+ assert.equal(requests[0].url.searchParams.get('id'),'eq.'+SITE);
+ assert.equal(requests[0].options.headers.Prefer,'return=representation');
+});

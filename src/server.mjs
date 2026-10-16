@@ -18,7 +18,7 @@ const server=http.createServer(async(req,res)=>{
  let body;
  // Reject oversized uploads while streaming bytes, not after UTF-8 decoding.
  // Stop parsing as soon as the 64 KiB transport limit is exceeded.
- if(req.method==='POST'||req.method==='PATCH'){
+ if(req.method==='POST'||req.method==='PATCH'||req.method==='DELETE'){
   if(!(req.headers['content-type']||'').startsWith('application/json')){res.writeHead(415).end(JSON.stringify({ok:false,error:'json_required'}));return;}
   try{
    const chunks=[];let bytes=0,tooLarge=false;

@@ -45,6 +45,7 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
    },body:updates});
   },
   async ownedSite(tenantId,id){const rows=await request('seo_sites',{filter:{tenant_id:eq(tenantId),id:eq(id)},limit:1});return rows[0]||null;},
+  async deleteSite(tenantId,id){return request('seo_sites',{method:'DELETE',filter:{tenant_id:eq(tenantId),id:eq(id)}});},
   async listOpportunities(tenantId,siteId){return request('seo_opportunities',{filter:filter(tenantId,siteId),order:'priority.desc',limit:200});},
   async importOpportunities(tenantId,siteId,rows){return request('seo_opportunities',{method:'POST',body:rows.map(row=>({...row,tenant_id:tenantId,site_id:siteId})),upsert:true});},
   async listProspects(tenantId,siteId){return request('seo_prospects',{filter:filter(tenantId,siteId),order:'created_at.desc',limit:200});},

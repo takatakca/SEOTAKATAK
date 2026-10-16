@@ -9,6 +9,7 @@ const store={
  async schemaReady(){return true;},
  async listSites(t){return t===A?[site]:[];},
  async ownedSite(t,id){return t===A&&id===siteId?site:null;},
+ async deleteSite(t,id){return t===A&&id===siteId?[site]:[];},
  async createSite(t,data){const row={...data,tenant_id:t};records.push(row);return [{...row,id:siteId}];},
  async listOpportunities(){return records.filter(row=>row.keyword);},
  async importOpportunities(t,id,rows){records.push(...rows);return rows;},
@@ -106,4 +107,18 @@ test('summary explicitly describes sampled evidence and refuses another tenant',
   assert.equal(own.result.summary.earnedBacklinksVerified,0);
   assert.equal((await req('GET',endpoint,null,jwt(B,['seo:view']))).code,404);
  }finally{Date.now=save;}
+});
+
+test('site deletion requires independent manager consent, exact domain and tenant ownership',async()=>{
+ const old=Date.now;try{Date.now=()=>1001000;
+  const path='/v1/sites/'+siteId;
+  assert.equal((await req('DELETE',path,{confirmDelete:true,confirmDomain:'takatak.ca'},jwt(A,['seo:view']))).code,403);
+  assert.equal((await req('DELETE',path,{confirmDelete:true,confirmDomain:'takatak.ca'},jwt(B,['seo:manage']))).code,404);
+  assert.equal((await req('DELETE',path,{confirmDelete:true,confirmDomain:'wrong.ca'})).code,400);
+  assert.equal((await req('DELETE',path,{confirmDelete:false,confirmDomain:'takatak.ca'})).code,400);
+  const deleted=await req('DELETE',path,{confirmDelete:true,confirmDomain:' TAKATAK.CA '});
+  assert.equal(deleted.code,200);
+  assert.equal(deleted.result.deleted,true);
+  assert.equal(deleted.result.siteId,siteId);
+ }finally{Date.now=old;}
 });
