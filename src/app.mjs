@@ -61,7 +61,7 @@ function summarizeRows(opportunities,prospects,briefs){
 }
 export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
-export async function dispatch({method,path,authorization,body},{store,signingKey,dnsLookup,rateGate=apiRateGate}){
+export async function dispatch({method,path,authorization,body,query},{store,signingKey,dnsLookup,rateGate=apiRateGate}){
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
  if(method==='GET'&&path==='/ready'){
   if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
@@ -84,6 +84,26 @@ export async function dispatch({method,path,authorization,body},{store,signingKe
  if(!allowance.allowed)return fail(429,'rate_limited',{'Retry-After':String(allowance.retryAfter)});
  const json=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
  try{
+  if(parts.length===3&&parts[0]==='v1'&&parts[1]==='workspace'&&
+     parts[2]==='export'&&method==='GET'){
+   const collection=query?.collection;
+   const offsetValue=query?.offset??'0';
+   if(!['sites','opportunities','prospects','briefs'].includes(collection)||
+      typeof offsetValue!=='string'||!/^(0|[1-9][0-9]{0,6})$/.test(offsetValue)||
+      Number(offsetValue)>1_000_000)return fail(400,'invalid_export_page');
+   const offset=Number(offsetValue);
+   const result=await store.exportWorkspacePage(tenantId,collection,offset,200);
+   return ok({export:{
+    format:'seotakatak-workspace-page',version:1,collection,offset,pageSize:200,
+    generatedAt:new Date().toISOString(),records:result.items,
+    hasMore:result.hasMore,nextOffset:result.hasMore?offset+result.items.length:null,
+    coverage:{
+     scope:'signed_takatak_client_workspace',
+     orderedBy:'id.asc',transactionallyConsistent:false,
+     note:'Retrieve every collection and follow nextOffset for subsequent pages. Concurrent updates may affect a multi-page export; this is not a regulator-certified account export.'
+    }
+   }});
+  }
   if(parts.length===2&&parts[1]==='sites'){
    if(method==='GET')return ok({sites:(await store.listSites(tenantId)).map(publicSite)});
    if(method==='POST'){

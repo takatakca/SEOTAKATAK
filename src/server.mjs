@@ -31,7 +31,7 @@ const server=http.createServer(async(req,res)=>{
    body=JSON.parse(Buffer.concat(chunks).toString('utf8'));
   }catch{res.writeHead(400).end(JSON.stringify({ok:false,error:'invalid_json'}));return;}
  }
- const response=await dispatch({method:req.method,path:url.pathname,authorization:req.headers.authorization,body},{store,signingKey:key});
+ const response=await dispatch({method:req.method,path:url.pathname,query:Object.fromEntries(url.searchParams),authorization:req.headers.authorization,body},{store,signingKey:key});
  if(response.headers)for(const [name,value] of Object.entries(response.headers))res.setHeader(name,value);
  if(typeof response.raw==='string'){
   res.setHeader('Content-Type',response.contentType);

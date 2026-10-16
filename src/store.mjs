@@ -4,12 +4,13 @@ const TABLES=new Set(['seo_sites','seo_opportunities','seo_prospects','seo_brief
 export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
  if(!baseUrl||!serviceKey||!/^https:\/\//.test(baseUrl))throw new Error('Server-side Supabase configuration required');
  const root=new URL('/rest/v1/',baseUrl);
- async function request(table,{method='GET',filter={},body,order,limit,select='*',upsert=false}={}){
+ async function request(table,{method='GET',filter={},body,order,limit,offset,select='*',upsert=false}={}){
   if(!TABLES.has(table))throw new Error('Unknown table');
   const url=new URL(table,root);
   for(const [key,value] of Object.entries(filter))url.searchParams.set(key,value);
   if(order)url.searchParams.set('order',order);
   if(limit!==undefined)url.searchParams.set('limit',String(limit));
+  if(offset!==undefined)url.searchParams.set('offset',String(offset));
   if(upsert)url.searchParams.set('on_conflict','tenant_id,site_id,keyword,source');
   if(method==='GET')url.searchParams.set('select',select);
   const headers={apikey:serviceKey,Authorization:'Bearer '+serviceKey,Accept:'application/json'};
@@ -55,6 +56,21 @@ export function createStore({baseUrl,serviceKey,fetchImpl=fetch}){
     }finally{readinessPending=null;}
    })();
    return readinessPending;
+  },
+  async exportWorkspacePage(tenantId,collection,offset,pageSize=200){
+   const allowed={
+    sites:['seo_sites','id,domain,niche,market,locale,created_at,verified_at'],
+    opportunities:['seo_opportunities','id,site_id,keyword,source,clicks,impressions,position,priority,updated_at'],
+    prospects:['seo_prospects','id,site_id,publication,url,relevance,status,created_at,updated_at'],
+    briefs:['seo_briefs','id,site_id,keyword,angle,status,created_at,reviewed_at,review_note']
+   };
+   if(!Object.hasOwn(allowed,collection)||!Number.isSafeInteger(offset)||offset<0||
+      offset>1_000_000||pageSize!==200)throw new DatabaseError(400);
+   const [table,select]=allowed[collection];
+   // Select only export-safe columns at PostgREST: secrets and reviewer identities never leave DB.
+   const rows=await request(table,{filter:{tenant_id:eq(tenantId)},
+    select,order:'id.asc',limit:pageSize+1,offset});
+   return {items:rows.slice(0,pageSize),hasMore:rows.length>pageSize};
   },
   async listSites(tenantId){return request('seo_sites',{filter:{tenant_id:eq(tenantId)},order:'created_at.desc',limit:200});},
   async createSite(tenantId,data){return request('seo_sites',{method:'POST',body:{...data,tenant_id:tenantId}});},
