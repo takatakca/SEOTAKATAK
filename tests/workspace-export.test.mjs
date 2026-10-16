@@ -22,9 +22,8 @@ test('workspace export rejects unauthenticated, import-only and invalid pages',a
   {collection:'sites',offset:'1.2'},
   {collection:'sites',offset:'1000001'},
   {collection:'sites',offset:'1e3'},
-  {collection:'sites',offset:'00'},
-  {collection:'sites',offset:'0',extra:'ignored',__proto__:'ignored'}
- ].slice(0,7)){
+  {collection:'sites',offset:'00'}
+ ]){
   const result=await fetchPage(signed(),query);
   assert.equal(result.code,400,JSON.stringify(query));
  }
