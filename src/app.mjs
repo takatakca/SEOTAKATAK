@@ -2,6 +2,7 @@ import { verifyBearer,hasScope } from './auth.mjs';
 import { DatabaseError } from './store.mjs';
 import {issueChallenge,challengeDetails,verifySiteTxt,CHALLENGE_MAX_AGE_MS} from './verification.mjs';
 import {apiRateGate} from './rate-limit.mjs';
+import {createMerchantReader,MerchantApiError} from './merchant.mjs';
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const statuses=new Set(['identified','researching','contacted','declined']); // earned requires independent verification
 const asText=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
@@ -67,7 +68,7 @@ function summarizeRows(opportunities,prospects,briefs){
 }
 export const validateDomain=domain;
 export const validateSearchConsoleRows=searchRows;
-export async function dispatch({method,path,authorization,body,query},{store,signingKey,dnsLookup,rateGate=apiRateGate}){
+export async function dispatch({method,path,authorization,body,query},{store,signingKey,dnsLookup,rateGate=apiRateGate,merchantReader}){
  if(method==='GET'&&path==='/health')return ok({status:'ok',service:'seotakatak'});
  if(method==='GET'&&path==='/ready'){
   if(!store||!signingKey||signingKey.length<32)return fail(503,'not_configured');
@@ -77,8 +78,10 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
  const identity=verifyBearer(authorization,signingKey);
  if(!identity)return fail(401,'unauthorized');
  const parts=path.split('/').filter(Boolean),tenantId=identity.tenantId;
- const importRoute=parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
-   ID.test(parts[2])&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST';
+ const merchantInspectRoute=parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
+   ID.test(parts[2])&&parts[3]==='merchant'&&parts[4]==='inspect'&&method==='POST';
+ const importRoute=(parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
+   ID.test(parts[2])&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST')||merchantInspectRoute;
  if(method==='GET'&&!hasScope(identity,'seo:view'))return fail(403,'permission_denied');
  if(importRoute&&!hasScope(identity,'seo:import'))return fail(403,'import_permission_required');
  if(method!=='GET'&&!importRoute&&!hasScope(identity,'seo:manage'))return fail(403,'permission_denied');
@@ -241,6 +244,32 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
     if(parts[3]==='opportunities.csv'){
      const rows=await store.listOpportunities(tenantId,siteId);
      return {code:200,raw:opportunityCsv(rows),contentType:'text/csv; charset=utf-8',fileName:'seo-opportunities-'+siteId+'.csv'};
+    }
+   }
+   if(merchantInspectRoute){
+    // Only the trusted V1 backend may sign the exact Merchant account mapping.
+    // The OAuth token must be fetched server-side in V1 and is never persisted.
+    if(!identity.merchantAccountId)return fail(403,'merchant_account_binding_required');
+    if(!site.verified_at)return fail(409,'site_not_dns_verified');
+    if(typeof json.oauthAccessToken!=='string'||json.oauthAccessToken.length<20||
+       json.oauthAccessToken.length>4096)
+      return fail(400,'invalid_merchant_access_token');
+    try{
+     const reader=merchantReader??createMerchantReader();
+     const observed=await reader.inspect({
+      accountId:identity.merchantAccountId,
+      accessToken:json.oauthAccessToken,
+      pageToken:json.pageToken,
+      pageSize:json.pageSize??25
+     });
+     return ok({merchant:observed});
+    }catch(error){
+     if(error instanceof MerchantApiError){
+      if(error.kind==='invalid_request')return fail(400,'invalid_merchant_request');
+      if(error.kind==='account_mismatch')return fail(403,'merchant_account_mismatch');
+      if(error.kind==='access_denied')return fail(403,'merchant_provider_access_denied');
+     }
+     return fail(502,'merchant_provider_unavailable');
     }
    }
    if(parts.length===5&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST'){
