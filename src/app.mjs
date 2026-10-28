@@ -79,7 +79,8 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
  if(!identity)return fail(401,'unauthorized');
  const parts=path.split('/').filter(Boolean),tenantId=identity.tenantId;
  const merchantInspectRoute=parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
-   ID.test(parts[2])&&parts[3]==='merchant'&&parts[4]==='inspect'&&method==='POST';
+   ID.test(parts[2])&&parts[3]==='merchant'&&
+   (parts[4]==='inspect'||parts[4]==='diagnostics')&&method==='POST';
  const importRoute=(parts.length===5&&parts[0]==='v1'&&parts[1]==='sites'&&
    ID.test(parts[2])&&parts[3]==='opportunities'&&parts[4]==='import'&&method==='POST')||merchantInspectRoute;
  if(method==='GET'&&!hasScope(identity,'seo:view'))return fail(403,'permission_denied');
@@ -256,12 +257,19 @@ export async function dispatch({method,path,authorization,body,query},{store,sig
       return fail(400,'invalid_merchant_access_token');
     try{
      const reader=merchantReader??createMerchantReader();
-     const observed=await reader.inspect({
-      accountId:identity.merchantAccountId,
-      accessToken:json.oauthAccessToken,
-      pageToken:json.pageToken,
-      pageSize:json.pageSize??25
-     });
+     const observed=parts[4]==='diagnostics'?
+      await reader.inspectSources({
+       accountId:identity.merchantAccountId,
+       accessToken:json.oauthAccessToken,
+       sourcePageToken:json.sourcePageToken,
+       issuePageToken:json.issuePageToken,
+       pageSize:json.pageSize??25
+      }):await reader.inspect({
+       accountId:identity.merchantAccountId,
+       accessToken:json.oauthAccessToken,
+       pageToken:json.pageToken,
+       pageSize:json.pageSize??25
+      });
      return ok({merchant:observed});
     }catch(error){
      if(error instanceof MerchantApiError){

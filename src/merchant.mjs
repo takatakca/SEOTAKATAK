@@ -93,6 +93,75 @@ export function createMerchantReader({fetchImpl=fetch,timeoutMs=8000}={}){
   }finally{clearTimeout(timer);}
  }
  return {
+  async inspectSources({accountId,accessToken,sourcePageToken,issuePageToken,pageSize=25}){
+   if(!validMerchantAccountId(accountId)||!accessTokenIsValid(accessToken))
+    throw new MerchantApiError('invalid_request');
+   const sourceToken=safePageToken(sourcePageToken);
+   const issueToken=safePageToken(issuePageToken);
+   if(sourceToken===false||issueToken===false||
+      !Number.isInteger(pageSize)||pageSize<1||pageSize>50)
+    throw new MerchantApiError('invalid_request');
+   const account=await request('/accounts/v1/accounts/'+accountId,accessToken);
+   if(account.name!=='accounts/'+accountId)throw new MerchantApiError('account_mismatch');
+   const sourcesUrl=new URL('/datasources/v1/accounts/'+accountId+'/dataSources',MERCHANT_ORIGIN);
+   sourcesUrl.searchParams.set('pageSize',String(pageSize));
+   if(sourceToken)sourcesUrl.searchParams.set('pageToken',sourceToken);
+   const issuesUrl=new URL('/accounts/v1/accounts/'+accountId+'/issues',MERCHANT_ORIGIN);
+   issuesUrl.searchParams.set('pageSize',String(pageSize));
+   if(issueToken)issuesUrl.searchParams.set('pageToken',issueToken);
+   const [sources,issues]=await Promise.all([
+    request(sourcesUrl.pathname+sourcesUrl.search,accessToken),
+    request(issuesUrl.pathname+issuesUrl.search,accessToken)
+   ]);
+   const sourceRows=sources.dataSources??[],issueRows=issues.accountIssues??[];
+   if(!Array.isArray(sourceRows)||sourceRows.length>pageSize||
+      !Array.isArray(issueRows)||issueRows.length>pageSize||
+      (sources.nextPageToken!==undefined&&safePageToken(sources.nextPageToken)===false)||
+      (issues.nextPageToken!==undefined&&safePageToken(issues.nextPageToken)===false))
+    throw new MerchantApiError();
+   const sourcePrefix='accounts/'+accountId+'/dataSources/';
+   const issuePrefix='accounts/'+accountId+'/issues/';
+   if(sourceRows.some(row=>!row||typeof row.name!=='string'||
+       !row.name.startsWith(sourcePrefix))||
+      issueRows.some(row=>!row||typeof row.name!=='string'||
+       !row.name.startsWith(issuePrefix)))
+    throw new MerchantApiError('account_mismatch');
+   return {
+    source:'google_merchant_api_v1',
+    account:{name:account.name,accountName:bounded(account.accountName,150),
+     testAccount:account.testAccount===true},
+    dataSources:sourceRows.map(row=>{
+     const primary=row.primaryProductDataSource&&typeof row.primaryProductDataSource==='object'?
+      row.primaryProductDataSource:{};
+     return {
+      name:bounded(row.name,200),displayName:bounded(row.displayName,200),
+      input:bounded(row.input,60),
+      fileInputType:bounded(row.fileInput?.fileInputType,60),
+      primaryFeedLabel:bounded(primary.feedLabel,24),
+      primaryContentLanguage:bounded(primary.contentLanguage,24),
+      primaryCountries:countries(primary.countries),
+      // Never disclose fileInput.fetchSettings (may contain private fetch URIs).
+      hasFileInput:!!row.fileInput
+     };
+    }),
+    accountIssues:issueRows.map(row=>({
+     name:bounded(row.name,260),
+     title:bounded(row.title,250),
+     severity:bounded(row.severity,60),
+     impactedDestinations:Array.isArray(row.impactedDestinations)?
+      row.impactedDestinations.slice(0,20).map(d=>({
+       reportingContext:bounded(d.reportingContext,64),
+       impacts:Array.isArray(d.impacts)?d.impacts.slice(0,40).map(i=>({
+        regionCode:bounded(i.regionCode,30),severity:bounded(i.severity,60)
+       })):[]
+      })):[]
+    })),
+    nextSourcePageToken:sources.nextPageToken||null,
+    nextIssuePageToken:issues.nextPageToken||null,
+    observedAt:new Date().toISOString(),
+    disclaimer:'Read-only Merchant data sources and issues as currently returned by Google; not proof of product feed upload, connection persistence, eligibility or visibility.'
+   };
+  },
   async inspect({accountId,accessToken,pageToken,pageSize=25}){
    if(!validMerchantAccountId(accountId)||!accessTokenIsValid(accessToken))
     throw new MerchantApiError('invalid_request');
