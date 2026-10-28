@@ -25,9 +25,11 @@
 ## À construire — dans l'ordre
 
 ### 1. Adaptateur Google Merchant Center (le morceau central, absent des 2 dépôts)
+
+> **Mise à jour 2026-10-28 :** la Content API for Shopping v2.1 est sunset depuis le 18 août 2026 et ne doit plus servir pour un nouveau branchement. Employer **Merchant API v1** (Google, `merchantapi.googleapis.com`), endpoints `/accounts/v1/` et `/products/v1/`. Documentation officielle : https://developers.google.com/shopping-content/guides/deprecation-and-sunset et https://developers.google.com/merchant/api/reference/rest . Les autres étapes métier restent valables.
 - OAuth Google **par commerçant** (un compte MC par marque, jamais un
   compte partagé) ; tokens stockés côté serveur, jamais au navigateur.
-- Content API for Shopping : lecture comptes, soumission et statut des
+- Merchant API v1 : lecture comptes, soumission et statut des
   flux, diagnostics produits (approuvés / refusés / en attente), erreurs.
 - Statut de connexion honnête : `not_configured` → `configured_untested`
   → `connected` (seulement après un appel réel réussi) / `error` /
@@ -89,8 +91,7 @@
   provisionner, migrations 0001→0005 dans l'ordre, secrets en runtime
   seulement). Ne pas présenter le module comme « en production » avant
   ces deux portes.
-- Push GitHub bloqué tant que l'app GitHub n'est pas en Read and write
-  sur « Contents » — coordonner avec le propriétaire avant toute PR.
+- État vérifié 2026-10-28 : écriture autorisée sur **SEOTAKATAK existant** (commits GitHub publiés). Les anciennes erreurs 403 concernent d'autres opérations d'app ou la création de nouveaux dépôts et ne prouvent pas que ce dépôt est en lecture seule. Ne pas extrapoler les permissions aux autres repositories.
 - Chaque action importante devient un job traçable (règle V1) ; chaque
   page affiche le système, la logique vit dans `src/lib`.
 - Tests : un test d'isolation tenant (un commerçant ne voit jamais les

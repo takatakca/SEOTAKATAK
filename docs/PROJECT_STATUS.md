@@ -1,3 +1,7 @@
+## 2026-10-28 — Actualisation GitHub + Drive
+
+Dernier SHA vérifié avant reprise: `711c64a1337cf265a368c8a3f7173698c6f303a9`, CI verte `40297914773`, déploiement Coolify échoué `40297957121`. PR V1 #196 ouverte, non fusionnée. Les nouveaux guides terrain (`TAKATAK_FIELD_STATE.md`, `FREE_LISTINGS_CONNECTION_GUIDE.md`) proviennent du commit du 26 octobre, confirmé par la note Drive correspondante. Aucun moteur Free Listings local signalé sur Drive n'a été retrouvé dans le dépôt distant; ne pas confondre dossier local `~/workspace/free-listings-engine/` et code GitHub publié. L'ancienne Content API for Shopping est périmée depuis le 18 août 2026; Merchant API v1 remplace cette intégration. OAuth et accès marchands réels restent à vérifier. Aucun déploiement opérationnel ni marchand « connecté » attesté.
+
 # SEOTAKATAK — project status
 
 Last audit: **2026-10-15** · GitHub repository: `takatakca/SEOTAKATAK` · branch: `main`.

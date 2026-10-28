@@ -1,3 +1,7 @@
+## 2026-10-28 — Merchant API replaces sunset Content API
+
+Google's Content API for Shopping reached its sunset on 18 August 2026. New Free Listings integrations use official `merchantapi.googleapis.com` Merchant API v1; references to Content API v2.1 in older field guides are superseded. Source https://developers.google.com/shopping-content/guides/deprecation-and-sunset and https://developers.google.com/merchant/api/reference/rest . Accounts, brand-specific feeds, GBP profiles and master catalogue described in `docs/TAKATAK_FIELD_STATE.md` already exist on the field side; this repository only has documentation until integration code is committed. OAuth must be merchant-specific and server-only, attached to the signed TAKATAK workspace, never a single shared account. No "connected" designation without an actual successful Merchant API response for the matching merchant. Google free listing eligibility and appearance are distinct and never guaranteed. TAKATAK V1 controls identity and deployment to its own main.
+
 # Architecture and operational decisions
 
 | Decision | Reason |

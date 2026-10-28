@@ -1,3 +1,7 @@
+## 2026-10-28 — Current verified release block
+
+The latest GitHub code before handoff was `711c64a1337cf265a368c8a3f7173698c6f303a9`, CI `40297914773` successful, Coolify deployment `40297957121` failed; verify current logs and do not claim production live. Migrations `0001` through `0005` require database-owner approval. No Google Merchant Center OAuth/provider live verification was performed. Merchant API v1 (not sunset Content API v2.1) is the only approved new adapter target. Existing field-side Merchant accounts/feeds remain untouched; see `docs/TAKATAK_FIELD_STATE.md` and the original Drive lot note.
+
 # Deployment and verification — SEOTAKATAK
 
 Source of truth: `takatakca/SEOTAKATAK` main. Read `deploy/COOLIFY.md` for the GitHub Action details.
