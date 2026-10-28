@@ -250,3 +250,22 @@ test('Merchant diagnostics route requires verified site and account ID bound by 
  assert.equal(calls[0].issuePageToken,'issuesDEF');
  assert.equal(JSON.stringify(result.result).includes(OAuth),false);
 });
+
+test('Google may omit empty product/dataSource/issue collections without implying approval',async()=>{
+ const reader=createMerchantReader({fetchImpl:async url=>{
+  const pathname=new URL(url).pathname;
+  return pathname==='/accounts/v1/accounts/'+merchantId?
+   new Response(JSON.stringify({name:'accounts/'+merchantId}),{status:200}):
+   new Response(JSON.stringify({}),{status:200});
+ }});
+ const products=await reader.inspect({accountId:merchantId,accessToken:OAuth});
+ assert.deepEqual(products.products,[]);
+ assert.equal(products.received,0);
+ assert.equal(products.nextPageToken,null);
+ assert.equal(Object.hasOwn(products,'connected'),false);
+ const diagnostics=await reader.inspectSources({accountId:merchantId,accessToken:OAuth});
+ assert.deepEqual(diagnostics.dataSources,[]);
+ assert.deepEqual(diagnostics.accountIssues,[]);
+ assert.equal(diagnostics.nextSourcePageToken,null);
+ assert.equal(diagnostics.nextIssuePageToken,null);
+});

@@ -176,20 +176,22 @@ export function createMerchantReader({fetchImpl=fetch,timeoutMs=8000}={}){
    url.searchParams.set('pageSize',String(pageSize));
    if(token)url.searchParams.set('pageToken',token);
    const result=await request(url.pathname+url.search,accessToken);
-   if(!Array.isArray(result.products)||result.products.length>pageSize)
+   // Google omits the products field for legitimate empty result pages.
+   const productRows=result.products??[];
+   if(!Array.isArray(productRows)||productRows.length>pageSize)
     throw new MerchantApiError();
    if(result.nextPageToken!==undefined&&safePageToken(result.nextPageToken)===false)
     throw new MerchantApiError();
-   if(result.products.some(p=>!p||typeof p!=='object'||typeof p.name!=='string'||
+   if(productRows.some(p=>!p||typeof p!=='object'||typeof p.name!=='string'||
        !p.name.startsWith('accounts/'+accountId+'/products/')))
     throw new MerchantApiError('account_mismatch');
    return {
     source:'google_merchant_api_v1',
     account:{name:account.name,accountName:bounded(account.accountName,150),
      testAccount:account.testAccount===true},
-    products:result.products.map(sanitizeProduct),
+    products:productRows.map(sanitizeProduct),
     nextPageToken:result.nextPageToken||null,
-    received:result.products.length,
+    received:productRows.length,
     observedAt:new Date().toISOString(),
     disclaimer:'Live provider data for a single read; not a stored connection, guarantee of eligibility, or proof of Google free-listings appearance.'
    };
