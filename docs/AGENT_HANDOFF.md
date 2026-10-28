@@ -1,3 +1,12 @@
+## 2026-10-28 — POST-CI / POST-DEPLOY CHECKPOINT
+
+- Dernier SHA CI complètement vérifié avant cette mise à jour : `cde36e73596240cb3dad325c1a6a33f67405c38e`, GitHub `SEOTAKATAK CI` **SUCCESS** run `40742487259`. Pipeline Node 22, tests incluant Merchant API v1 et PostgreSQL 0001→0005, Docker build.
+- Workflow de production du même SHA `40742555318` **FAILED**, étape `Deploy through Coolify and verify database readiness`, erreur exacte du journal : `Missing production setting: COOLIFY_API_URL`. Aucun code exécuté n'atteste d'une instance live, pas de migrations autorisées.
+- Tâches backend de cette session terminées : inspection Merchant API v1 en lecture seule (produits, dataSources, account issues), sécurité JWT et tenant, tests de pages vides et redaction ; documentation GitHub et note Drive écrites. Contrat OAuth réel par marchand dans TAKATAK V1 **non branché** ; suivre l'issue #2.
+- État de relève : dernière note Google Drive [SEOTAKATAK — Relève 2026-10-28](https://docs.google.com/document/d/1P5GAckYDjLu3jZD7-RxhyW80i1II1CmglYBv7KcvZNw/edit), vérifiée par relecture. PR V1 #196 toujours ouverte non fusionnée, coordinator-only.
+- Action suivante : vérifier la CI du commit documentaire créé par cette mise à jour, résoudre auprès de l'opérateur les paramètres GitHub production (voir issue #1), puis construire une PR V1 OAuth par commerçant seulement après avoir vérifié les possibilités du connecteur existant et les consentements des commerçants. Aucune authentification supplémentaire SEO ni prétention « Connected » permise.
+
+
 ## 2026-10-28 — FIN DE SESSION / RELÈVE CONFIRMÉE
 
 - GitHub `main` avant ce petit commit de relève : `3f81e1894f4151e437c2c720b070608f09d292ab`. **CI RÉUSSIE** `40742192681` pour les deux endpoints Merchant API v1, leurs tests et la documentation. **DÉPLOIEMENT ÉCHOUÉ** `40742258184`, journal exact `Missing production setting: COOLIFY_API_URL`. La nouvelle écriture de cette note déplace main et déclenche une nouvelle CI; vérifier son SHA/état et ne pas confondre avec un déploiement.
