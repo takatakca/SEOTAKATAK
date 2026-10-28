@@ -37,3 +37,19 @@ The backend first checks tenant-owned site and verified DNS, then GETs the exact
 ## Operator and privacy notes
 
 Do not invent Merchant IDs, prices, URLs, images or approval status. The Free Listings categories do not guarantee appearance. Some field-side product images exist in the master catalogue, but current published Merchant feed coverage must be verified from actual connected diagnostics; no invented image URLs. Existing V1 local-listings adapters that contain demo data must not be labelled live. Keep product/merchant data separated per client and follow owner-approved retention rules.
+
+## Source/issue diagnostics extension (2026-10-28)
+
+The same central `merchant_account_id`-bound JWT and ephemeral server-side OAuth bearer may call a second **read-only** API:
+```
+POST /v1/sites/{siteId}/merchant/diagnostics
+{"oauthAccessToken":"SERVER_ONLY_EPHEMERAL_OAUTH_TOKEN","pageSize":25}
+```
+Optional `sourcePageToken` and `issuePageToken` continue the independent provider lists. Backing Google Merchant API v1 calls (fixed host, GET only):
+- `GET https://merchantapi.googleapis.com/accounts/v1/accounts/{id}` — validates signed merchant ID.
+- `GET https://merchantapi.googleapis.com/datasources/v1/accounts/{id}/dataSources?pageSize=25` — existing product sources, not a feed upload.
+- `GET https://merchantapi.googleapis.com/accounts/v1/accounts/{id}/issues?pageSize=25` — actual account issues and impacted destinations as returned by Google.
+
+The response contains sanitized data-source names and types, primary feed labels/languages/countries; it **omits** confidential feed fetch credentials and private fetch URIs. Issues include only bounded title, severity and reported impact; unknown or absent issues mean only that none were returned on this page, not that the account or listings are guaranteed compliant. Provider calls are not persisted or treated as a connection status. Missing provider arrays are treated as empty collections, not server failures, and missing processed product status remains UNKNOWN.
+
+**Proof:** mock-only CI `40741331850` (code SHA `d12b387a`), `40741406954` (test SHA `c76c15a3`), `40741684535` (synthetic test ID SHA `72d96dcc`) and `40741845323` (empty-page fix SHA `b35d0ddb`) all succeeded. **No real Google connection attempted.** Existing Merchant Center account IDs should not be copied into public test fixtures, and no real customer product data should enter repository tests. Actual V1 OAuth/owner mapping and first real staging read are tracked in [SEOTAKATAK issue #2](https://github.com/takatakca/SEOTAKATAK/issues/2).
