@@ -1,5 +1,7 @@
 # SEOTAKATAK Worklog
 
+2026-10-28 | GPT-6 | bc91d5a9 + 65a0fe50 | Merchant API v1 account-bound read-only adapter, signed seo:import claim, verified-site scope, sanitized real provider schema and tests. CI 40740403083 / 40740549546 PASS. Deploy 40740617448 FAIL missing COOLIFY_API_URL. Drive living handoff updated; real OAuth and owner-approved DB release still blocked.
+
 2026-10-28 | GPT-6 | PRE-CODE handoff | GitHub 711c64a1 CI 40297914773 PASS, deployment 40297957121 FAILED | Read AGENTS, handoff and field Free Listings notes, Drive Oct26 lot; corrected stale Oct16 continuity and deprecated Content API instruction; Merchant API v1 next; no DB/production modifications yet.
 
 2026-10-16 | ChatGPT/GitHub agent | main · 5274fb80 CI 38942967374 PASS | Implemented atomic per-tenant/profile/bucket PostgreSQL shared quota with SQL 0005, retained local burst gate, safe 429/503; concurrent CI proves 8 of 20 imports allowed; 1 MiB streaming & safe SELECT work validated | Migrations 0001–0005 require owner approval; Coolify environment missing; PR #196 V1 coordinator review

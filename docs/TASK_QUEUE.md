@@ -1,7 +1,8 @@
 # SEOTAKATAK executable task queue
 
 - [x] Reconcile current GitHub main/CI/PR state with Oct26 Drive field notes; keep pre-existing Merchant accounts and feeds untouched.
-- [ ] Implement tested read-only Google Merchant API v1 integration (OAuth token obtained only by authorized TAKATAK server; no fake connected state), then V1 signed bridge and separate coordinator-owned PR.
+- [x] Implement and test read-only Google Merchant API v1 account/products inspection with JWT signed merchant account binding, DNS and tenant restriction, real-status mapping; mock-only CI, no real Google account connected.
+- [ ] Add approved TAKATAK V1 merchant-specific OAuth/account mapping and signed bridge on coordinator-reviewed feature branch; V1 issues `merchant_account_id` only from verified mapped account; perform actual read-only Google Merchant API call in staging and store connection evidence separately.
 - [ ] Connect existing Merchant Center brand accounts and feeds through owner-authorized OAuth + real successful API call; never recreate accounts or assume production data.
 - [ ] Review separate local Free Listings engine artifact and master catalogue when it is actually available in the connected workspace; do not reproduce its algorithms from a summary.
 

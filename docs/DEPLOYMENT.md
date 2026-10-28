@@ -1,3 +1,11 @@
+## 2026-10-28 — Merchant API v1 staged release gate
+
+The backend now contains `POST /v1/sites/:siteId/merchant/inspect`, which is **not accessible** to regular V1 JWTs: only `seo:import` with an additional signed `merchant_account_id` bound to a proven-ownership SEO site is eligible. Its `oauthAccessToken` must be retrieved by TAKATAK V1 **server-side** through the merchant's own authorized OAuth connection, not from the browser. Request shape: JSON `{"oauthAccessToken":"<ephemeral-server-token>","pageSize":25,"pageToken":"<optional-google-page-token>"}`. Never print token values in logs, examples or GitHub actions.
+
+Merchant API v1 account GET and products GET only. Google OAuth scope is `https://www.googleapis.com/auth/content`; every account and feed preexisting per `docs/TAKATAK_FIELD_STATE.md` must remain untouched. A verified provider response is not by itself a persistent V1 merchant connection, and FREE_LISTINGS country approval is neither guaranteed appearance nor guaranteed business outcome. Before marking any account `connected`: V1 mapping, owner OAuth, genuine provider account-product diagnostics, tenant A/B isolation, staging smoke, and approval by V1 release coordinator are mandatory.
+
+Latest backend code CI `40740549546` SUCCESS; Coolify `40740617448` FAILURE `Missing production setting: COOLIFY_API_URL`. SQL migrations 0001–0005 still require DB owner approval. Do not release this module or new schema to customer production until those gates are actually satisfied.
+
 ## 2026-10-28 — Current verified release block
 
 The latest GitHub code before handoff was `711c64a1337cf265a368c8a3f7173698c6f303a9`, CI `40297914773` successful, Coolify deployment `40297957121` failed; verify current logs and do not claim production live. Migrations `0001` through `0005` require database-owner approval. No Google Merchant Center OAuth/provider live verification was performed. Merchant API v1 (not sunset Content API v2.1) is the only approved new adapter target. Existing field-side Merchant accounts/feeds remain untouched; see `docs/TAKATAK_FIELD_STATE.md` and the original Drive lot note.
