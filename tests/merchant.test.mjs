@@ -157,3 +157,96 @@ test('Merchant inspection requires signed import scope, active tenant and verifi
  assert.equal(observed.length,1,'Rejected requests must never reach the Google provider');
  assert.equal(JSON.stringify(result.result).includes(OAuth),false);
 });
+
+
+test('Merchant diagnostics reads real Google v1 dataSources and account issues without leaking feed credentials',async()=>{
+ const paths=[];
+ const reader=createMerchantReader({fetchImpl:async(url,options)=>{
+  const u=new URL(url);
+  paths.push(u);
+  assert.equal(options.method,'GET');
+  assert.equal(options.redirect,'error');
+  if(u.pathname==='/accounts/v1/accounts/'+merchantId)
+   return new Response(JSON.stringify({name:'accounts/'+merchantId,accountName:'Existing MC account'}),{status:200});
+  if(u.pathname==='/datasources/v1/accounts/'+merchantId+'/dataSources')
+   return new Response(JSON.stringify({
+    dataSources:[{name:'accounts/'+merchantId+'/dataSources/123',displayName:'Existing primary feed',
+     input:'FILE',fileInput:{fileInputType:'FETCH',
+      fetchSettings:{username:'secret-user',password:'secret-pass',
+       fetchUri:'sftp://private.example/feeds/merchant.xml'}},
+     primaryProductDataSource:{feedLabel:'CA',contentLanguage:'fr',countries:['CA']}}],
+    nextPageToken:'sourceNext'
+   }),{status:200});
+  if(u.pathname==='/accounts/v1/accounts/'+merchantId+'/issues')
+   return new Response(JSON.stringify({
+    accountIssues:[{name:'accounts/'+merchantId+'/issues/shop',
+     title:'Store needs verification',severity:'CRITICAL',detail:'private-account-information',
+     impactedDestinations:[{reportingContext:'FREE_LISTINGS',impacts:[{regionCode:'CA',severity:'CRITICAL'}]}]}],
+    nextPageToken:'issuesNext'
+   }),{status:200});
+  throw Error('Unexpected fixed Google path: '+u.pathname);
+ }});
+ const diagnostics=await reader.inspectSources({accountId:merchantId,accessToken:OAuth,
+  sourcePageToken:'previousSource',issuePageToken:'previousIssue',pageSize:15});
+ assert.equal(paths.length,3);
+ assert.equal(paths[1].searchParams.get('pageSize'),'15');
+ assert.equal(paths[1].searchParams.get('pageToken'),'previousSource');
+ assert.equal(paths[2].searchParams.get('pageToken'),'previousIssue');
+ assert.equal(diagnostics.dataSources.length,1);
+ assert.equal(diagnostics.dataSources[0].primaryFeedLabel,'CA');
+ assert.equal(diagnostics.accountIssues[0].severity,'CRITICAL');
+ assert.equal(diagnostics.accountIssues[0].impactedDestinations[0].reportingContext,'FREE_LISTINGS');
+ assert.equal(diagnostics.nextSourcePageToken,'sourceNext');
+ assert.equal(diagnostics.nextIssuePageToken,'issuesNext');
+ const visible=JSON.stringify(diagnostics);
+ for(const privateValue of ['secret-user','secret-pass','sftp://','private-account-information',OAuth])
+  assert.equal(visible.includes(privateValue),false,'Do not leak provider secrets');
+ assert.equal(Object.hasOwn(diagnostics,'connected'),false);
+});
+
+test('Merchant diagnostics disallow cross-account data sources and arbitrary pagination',async()=>{
+ const reader=createMerchantReader({fetchImpl:async url=>{
+  const path=new URL(url).pathname;
+  if(path.startsWith('/accounts/v1/accounts/')&&!path.includes('/issues'))
+   return new Response(JSON.stringify({name:'accounts/'+merchantId}),{status:200});
+  if(path.includes('/dataSources'))
+   return new Response(JSON.stringify({dataSources:[{
+    name:'accounts/999999/dataSources/456',displayName:'unrelated account'
+   }]}),{status:200});
+  return new Response(JSON.stringify({accountIssues:[]}),{status:200});
+ }});
+ await assert.rejects(()=>reader.inspectSources({accountId:merchantId,accessToken:OAuth}),
+  e=>e instanceof MerchantApiError&&e.kind==='account_mismatch');
+ await assert.rejects(()=>reader.inspectSources({
+  accountId:merchantId,accessToken:OAuth,sourcePageToken:'bad&override=yes'
+ }),e=>e instanceof MerchantApiError&&e.kind==='invalid_request');
+});
+
+test('Merchant diagnostics route requires verified site and account ID bound by V1, not client JSON',async()=>{
+ const site={id:SITE,tenant_id:A,domain:'example.ca',verified_at:'2026-10-20T00:00:00Z'};
+ const calls=[];
+ const store={ownedSite:async(t,id)=>t===A&&id===SITE?site:null};
+ const reader={
+  inspectSources:async input=>{
+   calls.push(input);
+   return {source:'google_merchant_api_v1',account:{name:'accounts/'+merchantId},
+    dataSources:[],accountIssues:[],nextSourcePageToken:null,nextIssuePageToken:null};
+  }
+ };
+ const request=authorization=>dispatch({method:'POST',
+  path:'/v1/sites/'+SITE+'/merchant/diagnostics',authorization,
+  body:{oauthAccessToken:OAuth,merchantAccountId:'999999999',sourcePageToken:'sourceABC',issuePageToken:'issuesDEF'}},
+  {store,signingKey:key,merchantReader:reader,
+   rateGate:{take:()=>({allowed:true,retryAfter:0})}});
+ assert.equal((await request(signed(B))).code,404);
+ assert.equal((await request(signed(A,['seo:import'],null))).code,403);
+ assert.equal((await request(signed(A,['seo:manage'],null))).code,403);
+ const result=await request(signed());
+ assert.equal(result.code,200);
+ assert.equal(result.result.merchant.source,'google_merchant_api_v1');
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].accountId,merchantId);
+ assert.equal(calls[0].sourcePageToken,'sourceABC');
+ assert.equal(calls[0].issuePageToken,'issuesDEF');
+ assert.equal(JSON.stringify(result.result).includes(OAuth),false);
+});
