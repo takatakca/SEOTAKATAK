@@ -1,5 +1,7 @@
 # SEOTAKATAK Worklog
 
+2026-10-28 | GPT-6 | final checkpoint | 3f81e189 CI 40742192681 PASS; Coolify 40742258184 FAIL exact Missing production setting COOLIFY_API_URL; Drive living doc updated; #2 V1 OAuth gate open, #1 production gate open. No live provider calls, migrations or deployments.
+
 2026-10-28 | GPT-6 | commits d12b387a, c76c15a3, 72d96dcc, b35d0ddb | added Merchant API v1 account issue + existing data source inspection, mock-only tenant/privacy tests, synthetic test merchant ID, safe provider empty pages; CI 40741845323 PASS. Issue #2 for V1 owner-authorized OAuth. No real provider credentials or production release; Coolify variable still missing.
 
 2026-10-28 | GPT-6 | bc91d5a9 + 65a0fe50 | Merchant API v1 account-bound read-only adapter, signed seo:import claim, verified-site scope, sanitized real provider schema and tests. CI 40740403083 / 40740549546 PASS. Deploy 40740617448 FAIL missing COOLIFY_API_URL. Drive living handoff updated; real OAuth and owner-approved DB release still blocked.

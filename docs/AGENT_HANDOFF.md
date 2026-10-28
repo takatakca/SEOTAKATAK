@@ -1,3 +1,13 @@
+## 2026-10-28 — FIN DE SESSION / RELÈVE CONFIRMÉE
+
+- GitHub `main` avant ce petit commit de relève : `3f81e1894f4151e437c2c720b070608f09d292ab`. **CI RÉUSSIE** `40742192681` pour les deux endpoints Merchant API v1, leurs tests et la documentation. **DÉPLOIEMENT ÉCHOUÉ** `40742258184`, journal exact `Missing production setting: COOLIFY_API_URL`. La nouvelle écriture de cette note déplace main et déclenche une nouvelle CI; vérifier son SHA/état et ne pas confondre avec un déploiement.
+- Revue V1: la PR `takatakca/takatak-v1#196` est restée ouverte, non fusionnée; pas de promotion V1 par l'agent backend.
+- Drive: note vivante vérifiée `https://docs.google.com/document/d/1P5GAckYDjLu3jZD7-RxhyW80i1II1CmglYBv7KcvZNw/edit` ; note d'origine du 26 octobre inchangée.
+- Références d'exécution: `src/merchant.mjs` et `src/app.mjs` pour inspection produits/sources/incidents ; `tests/merchant.test.mjs` pour validation mock et blocages faux comptes ; `docs/MERCHANT_API_V1_INTEGRATION.md` pour contrat V1.
+- Tâche en cours après cette relève: **coordination avec l'équipe V1** pour créer la connexion OAuth Merchant Center par commerçant et le mapping réel des comptes existants. Issue `SEOTAKATAK#2`; aucune vraie connexion Google ne peut être revendiquée actuellement. L'administrateur doit résoudre `SEOTAKATAK#1` (Coolify, base approuvée et migrations 0001–0005) et vérifier `/ready` + SHA exact avant publication.
+- Prochaine action précise: inspecter la CI de ce commit de relève et vérifier les deux issues; ensuite utiliser une PR V1 séparée/coordonnée pour connexion réelle et tests d'isolement A/B. Ne jamais recréer le générateur Free Listings local du terrain à partir d'un résumé. Pas de secrets, de données clients ou de migrations en production dans cette session.
+
+
 ## CURRENT 2026-10-28 — Merchant API v1 sources, issues and safe empty pages (GPT-6)
 
 - **Current tested code HEAD before this documentation commit:** `b35d0ddb23574d6a938dc05569bbc516c5b52611`. GitHub full CI `40741845323` **SUCCESS** (Node/test suite + Merchant tests, PostgreSQL migrations 0001–0005, shell syntax, Docker). This documentation commit will advance HEAD; check latest CI after push.
