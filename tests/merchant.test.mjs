@@ -9,7 +9,7 @@ const B='8d87a2c9-fb84-474a-8ccc-43d6fe47605d';
 const SITE='7d87a2c9-fb84-474a-8ccc-43d6fe47605e';
 const key='a'.repeat(64);
 const OAuth='test-only-access-token-with-30-characters';
-const merchantId='5882074745';
+const merchantId='1234567890123';
 const signed=(tenantId=A,permissions=['seo:import'],merchantAccountId=merchantId)=>
  'Bearer '+issueToken({tenantId,subject:'merchant-v1-test',permissions,
   ...(merchantAccountId?{merchantAccountId}:{})},key);
@@ -26,7 +26,7 @@ function mockProvider(){
   assert.equal(init.headers.Authorization,'Bearer '+OAuth);
   if(u.pathname==='/accounts/v1/accounts/'+merchantId)
    return new Response(JSON.stringify({name:'accounts/'+merchantId,
-    accountName:'Existing PPP Merchant Center',testAccount:false,
+    accountName:'Synthetic test Merchant account',testAccount:false,
     privateCredential:'never-expose'}),{status:200});
   if(u.pathname==='/products/v1/accounts/'+merchantId+'/products')
    return new Response(JSON.stringify({products:[{
@@ -50,7 +50,7 @@ test('Merchant client uses current fixed Google Merchant API v1 origins and sani
  const result=await reader.inspect({accountId:merchantId,accessToken:OAuth,pageSize:25});
  assert.equal(result.source,'google_merchant_api_v1');
  assert.equal(result.account.name,'accounts/'+merchantId);
- assert.equal(result.account.accountName,'Existing PPP Merchant Center');
+ assert.equal(result.account.accountName,'Synthetic test Merchant account');
  assert.equal(result.products[0].offerId,'sku1');
  assert.equal(result.products[0].productStatusAvailable,true);
  assert.equal(result.products[0].destinationStatuses[0].approvedCountries[0],'CA');
